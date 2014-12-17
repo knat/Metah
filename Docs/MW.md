@@ -12,7 +12,7 @@ System.Activities.Statements -> SAS
 System.ServiceModel.Activities -> SSA
 ```
 
-All the code listings in this article are contained in [HelloMW project](http://metah.codeplex.com/SourceControl/latest#Examples/W/HelloMW/HelloMW.sln").
+All the code listings in this article are contained in [HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW").
 
 I'm a .NET programmer in China and my English is not good(maybe poor), I'm very appreciative if you would improve this article.
 
@@ -169,7 +169,7 @@ As the preceding code demonstrates, composing activities in C#(/VB) is very verb
 
 (2). Download and install [the latest Metah vsix package](http://metah.codeplex.com);
 
-(3). Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](http://metah.codeplex.com/SourceControl/latest#Examples/W/HelloMW/HelloMW.sln);
+(3). Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW);
 
 (4). Delete Program.cs;
 
@@ -1669,7 +1669,7 @@ For more information, please refer to the MSDN library ["Runtime Activities in W
 
 ##Service statements##
 
-You should be familiar with [the WF services and the API](http://msdn.microsoft.com/en-us/library/vstudio/dd456788(v=vs.110).aspx). If so, open [the HelloMW project](http://metah.codeplex.com/SourceControl/latest#Examples/W/HelloMW/HelloMW.sln) in Visual Studio and view the WFServices.mw and the generated WFServices.mw.cs, you will understand the MW service statements easily.
+You should be familiar with [the WF services and the API](http://msdn.microsoft.com/en-us/library/vstudio/dd456788(v=vs.110).aspx). If so, open [the HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW) in Visual Studio and view the WFServices.mw and the generated WFServices.mw.cs, you will understand the MW service statements easily.
 
 Grammar:
 
