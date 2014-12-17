@@ -19,235 +19,234 @@ The following figure, which is taken from the MSDN library ["Getting Started Tut
 
 The WF designer generates XAML code. XAML is not a requirement for activity composing. It's perfectly legal and reasonable to compose activities in C#/VB. Actually, most of the composite activities in the MSDN [WF Samples](http://msdn.microsoft.com/en-us/library/vstudio/dd483375(v=vs.110).aspx) are written in C#/VB. `SequentialNumberGuess` in Handmade.cs is functionally equivalent to the XAML code of the preceding figure:
 
-    //Handmade.cs
-    using System;
-    using System.Threading;
-    using System.Collections.Generic;
-    using System.Activities;
-    using System.Activities.Expressions;
-    using System.Activities.Statements;
-    
-    namespace Handmade {
-        public sealed class SequentialNumberGuess : Activity {
-            public InArgument<int> MaxNumber { get; set; }
-            public OutArgument<int> Turns { get; set; }
-            private Activity GetImplementation() {
-                var target = new Variable<int>();
-                var guess = new Variable<int>();
-                return new Sequence {
-                    Variables = { target, guess },
-                    Activities = {
-                        new Assign<int> {
-                            To = new OutArgument<int>(target),
-                            Value = new InArgument<int>(ctx => new Random().Next(1, MaxNumber.Get(ctx) + 1))
-                        },
-                        new DoWhile {
-                            Body = new Sequence {
-                                Activities = {
-                                    new Prompt {
-                                        BookmarkName = "EnterGuess",
-                                        Text = new InArgument<string>(ctx =>
-                                            "Please enter a number between 1 and " + MaxNumber.Get(ctx)),
-                                        Result = new OutArgument<int>(guess)
-                                    },
-                                    new Assign<int> {
-                                        To = new OutArgument<int>(ctx => Turns.Get(ctx)),
-                                        Value = new InArgument<int>(ctx => Turns.Get(ctx) + 1)
-                                    },
-                                    new If {
-                                        Condition = new InArgument<bool>(ctx => guess.Get(ctx) != target.Get(ctx)),
-                                        Then = new If {
-                                            Condition = new InArgument<bool>(ctx => guess.Get(ctx) < target.Get(ctx)),
-                                            Then = new WriteLine { Text = "Your guess is too low."},
-                                            Else = new WriteLine { Text = "Your guess is too high."}
-                                        }
+```C#
+//Handmade.cs
+using System;
+using System.Threading;
+using System.Collections.Generic;
+using System.Activities;
+using System.Activities.Expressions;
+using System.Activities.Statements;
+
+namespace Handmade {
+    public sealed class SequentialNumberGuess : Activity {
+        public InArgument<int> MaxNumber { get; set; }
+        public OutArgument<int> Turns { get; set; }
+        private Activity GetImplementation() {
+            var target = new Variable<int>();
+            var guess = new Variable<int>();
+            return new Sequence {
+                Variables = { target, guess },
+                Activities = {
+                    new Assign<int> {
+                        To = new OutArgument<int>(target),
+                        Value = new InArgument<int>(ctx => new Random().Next(1, MaxNumber.Get(ctx) + 1))
+                    },
+                    new DoWhile {
+                        Body = new Sequence {
+                            Activities = {
+                                new Prompt {
+                                    BookmarkName = "EnterGuess",
+                                    Text = new InArgument<string>(ctx =>
+                                        "Please enter a number between 1 and " + MaxNumber.Get(ctx)),
+                                    Result = new OutArgument<int>(guess)
+                                },
+                                new Assign<int> {
+                                    To = new OutArgument<int>(ctx => Turns.Get(ctx)),
+                                    Value = new InArgument<int>(ctx => Turns.Get(ctx) + 1)
+                                },
+                                new If {
+                                    Condition = new InArgument<bool>(ctx => guess.Get(ctx) != target.Get(ctx)),
+                                    Then = new If {
+                                        Condition = new InArgument<bool>(ctx => guess.Get(ctx) < target.Get(ctx)),
+                                        Then = new WriteLine { Text = "Your guess is too low."},
+                                        Else = new WriteLine { Text = "Your guess is too high."}
                                     }
                                 }
-                            },
-                            Condition = new LambdaValue<bool>(ctx => guess.Get(ctx) != target.Get(ctx))
-                        }
-                    }
-                };
-            }
-            private Func<Activity> _implementation;
-            protected override Func<Activity> Implementation {
-                get {
-                    return _implementation ?? (_implementation = GetImplementation);
-                }
-                set { throw new NotSupportedException(); }
-            }
-        }
-    
-        public sealed class Prompt : Activity<int> {
-            public InArgument<string> BookmarkName { get; set; }
-            public InArgument<string> Text { get; set; }
-            private Activity GetImplementation() {
-                return new Sequence {
-                    Activities = {
-                        new WriteLine {
-                            Text = new InArgument<string>(ctx => Text.Get(ctx))
+                            }
                         },
-                        new ReadInt {
-                            BookmarkName = new InArgument<string>(ctx => BookmarkName.Get(ctx)),
-                            Result = new OutArgument<int>(ctx => Result.Get(ctx))
-                        }
+                        Condition = new LambdaValue<bool>(ctx => guess.Get(ctx) != target.Get(ctx))
                     }
-                };
-            }
-            private Func<Activity> _implementation;
-            protected override Func<Activity> Implementation {
-                get {
-                    return _implementation ?? (_implementation = GetImplementation);
                 }
-                set { throw new NotSupportedException(); }
-            }
+            };
         }
-    
-        public sealed class ReadInt : NativeActivity<int> {
-            public InArgument<string> BookmarkName { get; set; }
-            protected override void Execute(NativeActivityContext context) {
-                context.CreateBookmark(BookmarkName.Get(context), OnReadComplete);
+        private Func<Activity> _implementation;
+        protected override Func<Activity> Implementation {
+            get {
+                return _implementation ?? (_implementation = GetImplementation);
             }
-            protected override bool CanInduceIdle { get { return true; } }
-            void OnReadComplete(NativeActivityContext context, Bookmark bookmark, object state) {
-                Result.Set(context, (int)state);
-            }
+            set { throw new NotSupportedException(); }
         }
-    
-        class Program {
-            static void Main() {
-                var syncEvent = new AutoResetEvent(false);
-                var idleEvent = new AutoResetEvent(false);
-                var wfApp = new WorkflowApplication(new SequentialNumberGuess(),
-                    new Dictionary<string, object>() { { "MaxNumber", 100 } });
-                wfApp.Completed = (WorkflowApplicationCompletedEventArgs e) => {
-                    Console.WriteLine("Congratulations, you guessed the number in {0} turns.", e.Outputs["Turns"]);
-                    syncEvent.Set();
-                };
-                wfApp.Aborted = (WorkflowApplicationAbortedEventArgs e) => {
-                    Console.WriteLine(e.Reason);
-                    syncEvent.Set();
-                };
-                wfApp.OnUnhandledException = (WorkflowApplicationUnhandledExceptionEventArgs e) => {
-                    Console.WriteLine(e.UnhandledException.ToString());
-                    return UnhandledExceptionAction.Terminate;
-                };
-                wfApp.Idle = (WorkflowApplicationIdleEventArgs e) => {
-                    idleEvent.Set();
-                };
-                wfApp.Run();
-                var handles = new WaitHandle[] { syncEvent, idleEvent };
-                while (WaitHandle.WaitAny(handles) == 1) {
-                    var isValidEntry = false;
-                    while (!isValidEntry) {
-                        int guess;
-                        if (!int.TryParse(Console.ReadLine(), out guess)) {
-                            Console.WriteLine("Please enter an integer.");
-                        }
-                        else {
-                            isValidEntry = true;
-                            wfApp.ResumeBookmark("EnterGuess", guess);
-                        }
+    }
+
+    public sealed class Prompt : Activity<int> {
+        public InArgument<string> BookmarkName { get; set; }
+        public InArgument<string> Text { get; set; }
+        private Activity GetImplementation() {
+            return new Sequence {
+                Activities = {
+                    new WriteLine {
+                        Text = new InArgument<string>(ctx => Text.Get(ctx))
+                    },
+                    new ReadInt {
+                        BookmarkName = new InArgument<string>(ctx => BookmarkName.Get(ctx)),
+                        Result = new OutArgument<int>(ctx => Result.Get(ctx))
+                    }
+                }
+            };
+        }
+        private Func<Activity> _implementation;
+        protected override Func<Activity> Implementation {
+            get {
+                return _implementation ?? (_implementation = GetImplementation);
+            }
+            set { throw new NotSupportedException(); }
+        }
+    }
+
+    public sealed class ReadInt : NativeActivity<int> {
+        public InArgument<string> BookmarkName { get; set; }
+        protected override void Execute(NativeActivityContext context) {
+            context.CreateBookmark(BookmarkName.Get(context), OnReadComplete);
+        }
+        protected override bool CanInduceIdle { get { return true; } }
+        void OnReadComplete(NativeActivityContext context, Bookmark bookmark, object state) {
+            Result.Set(context, (int)state);
+        }
+    }
+
+    class Program {
+        static void Main() {
+            var syncEvent = new AutoResetEvent(false);
+            var idleEvent = new AutoResetEvent(false);
+            var wfApp = new WorkflowApplication(new SequentialNumberGuess(),
+                new Dictionary<string, object>() { { "MaxNumber", 100 } });
+            wfApp.Completed = (WorkflowApplicationCompletedEventArgs e) => {
+                Console.WriteLine("Congratulations, you guessed the number in {0} turns.", e.Outputs["Turns"]);
+                syncEvent.Set();
+            };
+            wfApp.Aborted = (WorkflowApplicationAbortedEventArgs e) => {
+                Console.WriteLine(e.Reason);
+                syncEvent.Set();
+            };
+            wfApp.OnUnhandledException = (WorkflowApplicationUnhandledExceptionEventArgs e) => {
+                Console.WriteLine(e.UnhandledException.ToString());
+                return UnhandledExceptionAction.Terminate;
+            };
+            wfApp.Idle = (WorkflowApplicationIdleEventArgs e) => {
+                idleEvent.Set();
+            };
+            wfApp.Run();
+            var handles = new WaitHandle[] { syncEvent, idleEvent };
+            while (WaitHandle.WaitAny(handles) == 1) {
+                var isValidEntry = false;
+                while (!isValidEntry) {
+                    int guess;
+                    if (!int.TryParse(Console.ReadLine(), out guess)) {
+                        Console.WriteLine("Please enter an integer.");
+                    }
+                    else {
+                        isValidEntry = true;
+                        wfApp.ResumeBookmark("EnterGuess", guess);
                     }
                 }
             }
         }
     }
+}
+```
 
 We can classify activites into two groups: primitive activities and composite activities. Primitive activities inherit from `SA.CodeActivity`, `SA.CodeActivity<T>`, `SA.NativeActivity`, `SA.NativeActivity<T>`, etc. Composite activities, which directly inherit from `SA.Activity` or `SA.Activity<T>`, are composed of primitive/composite activities. In Handmade.cs, `SequentialNumberGuess` and `Prompt` are composite activities and `ReadInt` is a primitive activity.
 As the preceding code demonstrates, composing activities in C#(/VB) is very verbose. Is there any way to simplify it? Yes! Welcome to the metaprogramming world and welcome to use Metah.W(MW):
 
 (1). You need Visual Studio 2013;
-
 (2). Download and install [the latest Metah vsix package](http://metah.codeplex.com);
-
 (3). Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](http://metah.codeplex.com/SourceControl/latest#Examples/W/HelloMW/HelloMW.sln);
-
 (4). Delete Program.cs;
-
 (5). Add new item -> Visual C# Items -> Metah.W -> Create a new MW file named FirstLook.mw;
-
 (6). Copy the following code into FirstLook.mw.
 
-    //FirstLook.mw
-    using System;
-    using System.Threading;
-    using System.Collections.Generic;
-    using System.Activities;
-    import HelloMW.FirstLook;
-    
-    namespace HelloMW.FirstLook {
-        public sealed activity SequentialNumberGuess(int MaxNumber, out int Turns) {
-            int target, guess;
-            target = new Random().Next(1, MaxNumber) + 1;
-            do {
-                guess = new Prompt().Invoke("EnterGuess", "Please enter a number between 1 and " + MaxNumber);
-                Turns++;
-                if (guess != target) {
-                    if (guess < target)
-                        Console.WriteLine("Your guess is too low.");
-                    else
-                        Console.WriteLine("Your guess is too high.");
-                }
-            }
-            while (guess != target);
-        }
-    
-        public sealed activity Prompt(string BookmarkName, string Text) as int {
-            Console.WriteLine(Text);
-            Result = new ReadInt().Invoke(BookmarkName);
-        }
-    
-        public sealed class ReadInt : NativeActivity<int> {
-            public InArgument<string> BookmarkName { get; set; }
-            protected override void Execute(NativeActivityContext context) {
-                context.CreateBookmark(BookmarkName.Get(context), OnReadComplete);
-            }
-            protected override bool CanInduceIdle { get { return true; } }
-            void OnReadComplete(NativeActivityContext context, Bookmark bookmark, object state) {
-                Result.Set(context, (int)state);
+```C#
+//FirstLook.mw
+using System;
+using System.Threading;
+using System.Collections.Generic;
+using System.Activities;
+import HelloMW.FirstLook;
+
+namespace HelloMW.FirstLook {
+    public sealed activity SequentialNumberGuess(int MaxNumber, out int Turns) {
+        int target, guess;
+        target = new Random().Next(1, MaxNumber) + 1;
+        do {
+            guess = new Prompt().Invoke("EnterGuess", "Please enter a number between 1 and " + MaxNumber);
+            Turns++;
+            if (guess != target) {
+                if (guess < target)
+                    Console.WriteLine("Your guess is too low.");
+                else
+                    Console.WriteLine("Your guess is too high.");
             }
         }
-    
-        class Program {
-            static void Main() {
-                var syncEvent = new AutoResetEvent(false);
-                var idleEvent = new AutoResetEvent(false);
-                var wfApp = new WorkflowApplication(new SequentialNumberGuess(),
-                    new Dictionary<string, object>() { { "MaxNumber", 100 } });
-                wfApp.Completed = (WorkflowApplicationCompletedEventArgs e) => {
-                    Console.WriteLine("Congratulations, you guessed the number in {0} turns.", e.Outputs["Turns"]);
-                    syncEvent.Set();
-                };
-                wfApp.Aborted = (WorkflowApplicationAbortedEventArgs e) => {
-                    Console.WriteLine(e.Reason);
-                    syncEvent.Set();
-                };
-                wfApp.OnUnhandledException = (WorkflowApplicationUnhandledExceptionEventArgs e) => {
-                    Console.WriteLine(e.UnhandledException.ToString());
-                    return UnhandledExceptionAction.Terminate;
-                };
-                wfApp.Idle = (WorkflowApplicationIdleEventArgs e) => {
-                    idleEvent.Set();
-                };
-                wfApp.Run();
-                var handles = new WaitHandle[] { syncEvent, idleEvent };
-                while (WaitHandle.WaitAny(handles) == 1) {
-                    var isValidEntry = false;
-                    while (!isValidEntry) {
-                        int guess;
-                        if (!int.TryParse(Console.ReadLine(), out guess)) {
-                            Console.WriteLine("Please enter an integer.");
-                        }
-                        else {
-                            isValidEntry = true;
-                            wfApp.ResumeBookmark("EnterGuess", guess);
-                        }
+        while (guess != target);
+    }
+
+    public sealed activity Prompt(string BookmarkName, string Text) as int {
+        Console.WriteLine(Text);
+        Result = new ReadInt().Invoke(BookmarkName);
+    }
+
+    public sealed class ReadInt : NativeActivity<int> {
+        public InArgument<string> BookmarkName { get; set; }
+        protected override void Execute(NativeActivityContext context) {
+            context.CreateBookmark(BookmarkName.Get(context), OnReadComplete);
+        }
+        protected override bool CanInduceIdle { get { return true; } }
+        void OnReadComplete(NativeActivityContext context, Bookmark bookmark, object state) {
+            Result.Set(context, (int)state);
+        }
+    }
+
+    class Program {
+        static void Main() {
+            var syncEvent = new AutoResetEvent(false);
+            var idleEvent = new AutoResetEvent(false);
+            var wfApp = new WorkflowApplication(new SequentialNumberGuess(),
+                new Dictionary<string, object>() { { "MaxNumber", 100 } });
+            wfApp.Completed = (WorkflowApplicationCompletedEventArgs e) => {
+                Console.WriteLine("Congratulations, you guessed the number in {0} turns.", e.Outputs["Turns"]);
+                syncEvent.Set();
+            };
+            wfApp.Aborted = (WorkflowApplicationAbortedEventArgs e) => {
+                Console.WriteLine(e.Reason);
+                syncEvent.Set();
+            };
+            wfApp.OnUnhandledException = (WorkflowApplicationUnhandledExceptionEventArgs e) => {
+                Console.WriteLine(e.UnhandledException.ToString());
+                return UnhandledExceptionAction.Terminate;
+            };
+            wfApp.Idle = (WorkflowApplicationIdleEventArgs e) => {
+                idleEvent.Set();
+            };
+            wfApp.Run();
+            var handles = new WaitHandle[] { syncEvent, idleEvent };
+            while (WaitHandle.WaitAny(handles) == 1) {
+                var isValidEntry = false;
+                while (!isValidEntry) {
+                    int guess;
+                    if (!int.TryParse(Console.ReadLine(), out guess)) {
+                        Console.WriteLine("Please enter an integer.");
+                    }
+                    else {
+                        isValidEntry = true;
+                        wfApp.ResumeBookmark("EnterGuess", guess);
                     }
                 }
             }
         }
     }
+}
+```
 
 MW extends from C#, so it is compatible with any C# code. Just as the WF designer, MW can only author composite activities. In FirstLook.mw, `SequentialNumberGuess` and `Prompt` are written in MW syntax(call them MW activities). MW activities are like functions. You can declare zero or more parameters(`MaxNumber`, `Turns`, `BookmarkName`, etc) and an optional return type(`as int` in `Prompt`). In an activity body, you can declare variables(`target`, `guess`) and use statements. MW statements can be C# expression statements(`target = new Random().Next(1, MaxNumber) + 1;`, etc), well-known statements(if-else, while, do-while, foreach, try-catch-finally, etc) or special statements(parallel, pick, state-machine, delay, receive, send-reply, etc). Because an MW activity is like a function, you can invoke it and assign the return value to a variable/parameter(`guess = new Prompt().Invoke(...)`). You can even invoke non-MW activities(`Result = new ReadInt().Invoke(BookmarkName)`)! Finally, you can use MW activities as normal activities(`new WorkflowApplication(new SequentialNumberGuess(), ...)`).
 
