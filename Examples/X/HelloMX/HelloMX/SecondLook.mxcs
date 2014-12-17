@@ -1,0 +1,189 @@
+﻿//SecondLook.mxcs
+alias "http://schemas.example.com/projectb" as nsb;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;//for XmlReader & XmlWriter
+using System.Xml.Linq;//for XName & XNamespace
+using X = Metah.X;
+using Metah.X.Extensions;
+
+xnamespace {nsb} [namespace: Example.ProjectB] {
+    type String10 restrict String
+        facets{
+            lengthrange: 1..10;
+        };
+    ;
+    type String20 restrict String
+        facets{
+            lengthrange: 1..20;
+        };
+    ;
+    type String40 restrict String
+        facets{
+            lengthrange: 1..40;
+        };
+    ;
+    type Int32List list Int32;
+    type Email restrict String40
+        facets{
+            patterns: @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}";
+        };
+    ;
+    type Phone extend String20
+        attributes{
+            attribute PhoneType[?; default: "Unknown"] as PhoneType;
+        };
+        ##{
+            private Phone() { }
+            public Phone(string value, string phoneType = null) {
+                Value = value;
+                if (phoneType != null) EnsureAttributeSet().PhoneType_Value = phoneType;
+            }
+        }
+    ;
+    type PhoneType restrict String
+        facets{
+            enums: Unknown = "Unknown", Work = "Work", Home = "Home"
+        };
+    ;
+    type Phones
+        children{
+            element Phone[+; membername: Phones] as Phone;
+        };
+        ##{
+            private Phones() { }
+            public Phones(params Phone[] phones) {
+                var phoneList = EnsureComplexChild().Ensure_Phones();
+                foreach (var phone in phones)
+                    phoneList.CreateAndAddItem().Type = phone;
+            }
+        }
+    ;
+    type Address
+        children{
+            choice{
+                element Normal as NormalAddress;
+                element Geography as GeographyAddress;
+            }
+            ##{
+                protected override bool TryValidating(X.Context context, bool fromValidate){
+                    var success = base.TryValidating(context, fromValidate);
+                    if(success){
+                        var myCtx = (MyContext)context;
+                        if(myCtx.SomeCondition && Geography != null){
+                            myCtx.Diagnostics.Add(new X.Diagnostic(this, null, X.DiagnosticSeverity.Error,
+                                (int)MyDiagnosticCode.GeographyAddressNotAllowed, "Geography address not allowed, use normal address instead"));
+                            success = false;
+                        }
+                    }
+                    return success;
+                }
+            }
+            ;
+        };
+        ##{
+            private Address() { }
+            public Address(string country, string state, string city, string address, string zipCode) {
+                var attset = EnsureComplexChild().Ensure_Choice().Ensure_Normal().EnsureAttributeSet();
+                attset.Country_Value = country;
+                if (state != null) attset.State_Value = state;
+                attset.City_Value = city;
+                attset.Address_Value = address;
+                attset.ZipCode_Value = zipCode;
+            }
+            public Address(decimal longitude, decimal latitude) {
+                var attset = EnsureComplexChild().Ensure_Choice().Ensure_Geography().EnsureAttributeSet();
+                attset.Longitude_Value = longitude;
+                attset.Latitude_Value = latitude;
+            }
+            public override string ToString() {
+                var normal = ComplexChild.Choice.Normal;
+                if (normal != null) {
+                    var nattset = normal.AttributeSet;
+                    return nattset.Country_Value + ", " + nattset.City_Value + ", " + nattset.Address_Value;
+                }
+                var gattset = ComplexChild.Choice.Geography.AttributeSet;
+                return "(" + gattset.Longitude_Value + ", " + gattset.Latitude_Value + ")";
+            }
+        }
+    ;
+    type NormalAddress
+        attributes{
+            attribute Country as String20;
+            attribute State[?] as String20;
+            attribute City as String20;
+            attribute Address as String40;
+            attribute ZipCode as String10;
+        };
+    ;
+    type GeographyAddress
+        attributes{
+            attribute Longitude as SpatialNumber;
+            attribute Latitude as SpatialNumber;
+        };
+    ;
+    type SpatialNumber restrict Decimal
+        facets{
+            digits: 8..5;
+        };
+    ;
+    type Customer
+        attributes{
+            attribute Id[?] as Int32;
+            attribute Name as String10;
+            attribute Email as Email;
+            attribute RegistrationDate[?] as DateTime;
+            attribute OrderIds[?] as Int32List;
+        };
+        children{
+            element Phones as Phones;
+            element Address as Address;
+        };
+        ##{
+            private Customer() { }
+            public Customer(string name, string email, Phones phones, Address address) {
+                var attset = EnsureAttributeSet();
+                attset.Name_Value = name;
+                attset.Email_Value = email;
+                attset.RegistrationDate_Value = DateTime.Now;
+                var cc = EnsureComplexChild();
+                cc.Ensure_Phones().Type = phones;
+                cc.Ensure_Address().Type = address;
+            }
+            public override string ToString() {
+                var attset = AttributeSet;
+                var cc = ComplexChild;
+                return string.Format("Name: {0}, Email: {1}, Address: {2}", attset.Name_Value, attset.Email_Value, cc.Address.Type);
+            }
+        }
+    ;
+    element Customer as Customer;
+    //
+    //
+    public class MyContext : X.Context{
+        public bool SomeCondition{get; set;}
+    }
+    public enum MyDiagnosticCode {
+        GeographyAddressNotAllowed = X.DiagnosticCode.Extended,
+    }
+    public static class Test{
+        public static void Run(){
+            var customer = new Customer("Tank", "someone@example.com",
+                new Phones(new Phone("1234567", PhoneType.Home), new Phone("7654321")),
+                new Address(105.123M, 30.345M));
+            var ctx = new MyContext{SomeCondition = true};
+            if (!customer.TryValidate(ctx)) {
+                Display(ctx);
+                return;
+            }
+            Console.WriteLine(customer);
+        }
+        static void Display(X.Context ctx) {
+            foreach (var diag in ctx.Diagnostics)
+                Console.WriteLine(diag);
+        }
+    }
+}

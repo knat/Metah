@@ -1,0 +1,2198 @@
+﻿grammar W;
+options
+{   
+	language = CSharp3;    
+	TokenLabelType = CommonTokenEx;
+	//output=AST;
+	//ASTLabelType=CommonTree;
+	//backtrack=true;
+	//memoize=true;
+}
+//@lexer::header {}
+//@parser::header {}
+@lexer::namespace {Metah.Compilation.AntlrParsing}
+@parser::namespace {Metah.Compilation.AntlrParsing} 
+@lexer::superClass {Metah.Compilation.AntlrParsing.CSLexer}
+@parser::superClass {Metah.Compilation.AntlrParsing.CSParser}
+@lexer::modifier {internal sealed}
+@parser::modifier {internal abstract}
+
+//
+//
+//C#
+//
+//
+compilation_unit returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_CompilationUnit", st, _member("Externs", Externs), _member("Usings", Usings), _member("AttributeLists", AttributeLists), _member("Members", Members));}
+:Externs=extern_alias_directives Usings=using_directives AttributeLists=global_attribute_lists Members=namespace_members
+;
+//
+extern_alias_directives returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=extern_alias_directive {i.AddTo(ref list);})*
+;
+extern_alias_directive returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ExternAliasDirective", st, _member("ExternKeyword", ExternKeyword0), _member("AliasKeyword", AliasKeyword0), _member("Identifier", Identifier), _member("SemicolonToken", SemicolonToken0));}
+:ExternKeyword0=ExternKeyword AliasKeyword0=cAliasKeyword Identifier=IdentifierToken SemicolonToken0=SemicolonToken
+;
+//
+using_directives returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=using_directive{i.AddTo(ref list);})*
+;
+using_directive returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_UsingDirective", st, _member("UsingKeyword", UsingKeyword0), _member("Alias", Alias), _member("Name", Name), _member("SemicolonToken", SemicolonToken0));}
+:UsingKeyword0=UsingKeyword Alias=name_equals? Name=name SemicolonToken0=SemicolonToken
+;
+//
+global_attribute_lists returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:((OpenBracketToken (cAssemblyKeyword | cModuleKeyword)) => i=global_attribute_list {i.AddTo(ref list);})*
+;
+global_attribute_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AttributeList", st, _member("OpenBracketToken", OpenBracketToken0), _member("Target", Target), _member("Attributes", Attributes), _member("CloseBracketToken", CloseBracketToken0));}
+:OpenBracketToken0=OpenBracketToken Target=global_attribute_target_specifier Attributes=attributes CloseBracketToken0=CloseBracketToken
+;
+global_attribute_target_specifier returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AttributeTargetSpecifier", st, _member("Identifier", i), _member("ColonToken", ColonToken0));}
+:(i=cAssemblyKeyword | i=cModuleKeyword) ColonToken0=ColonToken
+;
+//
+attribute_lists returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=attribute_list {i.AddTo(ref list);})*
+;
+attribute_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AttributeList", st, _member("OpenBracketToken", OpenBracketToken0), _member("Target", Target), _member("Attributes", Attributes), _member("CloseBracketToken", CloseBracketToken0));}
+:OpenBracketToken0=OpenBracketToken Target=attribute_target_specifier? Attributes=attributes CloseBracketToken0=CloseBracketToken
+;
+attribute_target_specifier returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AttributeTargetSpecifier", st, _member("Identifier", i != null ? i : t.Node), _member("ColonToken", ColonToken0));}
+:(t=EventKeyword|t=ReturnKeyword|i=cFieldKeyword|i=cMethodKeyword|i=cParamKeyword|i=cPropertyKeyword|i=cTypeKeyword|i=cTypeVarKeyword) ColonToken0=ColonToken
+;
+//
+attributes returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=attribute{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=attribute{list.Add(i);})* (c=CommaToken{list.Add(c);})?
+;
+attribute returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_Attribute", st, _member("Name", Name), _member("ArgumentList", ArgumentList));}
+:Name=name ArgumentList=attribute_argument_list?
+;
+attribute_argument_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AttributeArgumentList", st, _member("OpenParenToken", OpenParenToken0), _member("Arguments", Arguments), _member("CloseParenToken", CloseParenToken0));}
+:OpenParenToken0=OpenParenToken Arguments=attribute_arguments? CloseParenToken0=CloseParenToken
+;
+attribute_arguments returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=attribute_argument{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=attribute_argument{list.Add(i);})*
+;
+attribute_argument returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AttributeArgument", st, _member("NameEquals", NameEquals), _member("NameColon", NameColon), _member("Expression", Expression));}
+:((name_equals) => NameEquals=name_equals | (name_colon) => NameColon=name_colon)? Expression=expression
+;
+name_equals returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_NameEquals", st, _member("Identifier", Identifier), _member("EqualsToken", EqualsToken0));}
+:Identifier=identifier_name EqualsToken0=EqualsToken
+;
+name_colon returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_NameColon", st, _member("Identifier", Identifier), _member("ColonToken", ColonToken0));}
+:Identifier=identifier_name ColonToken0=ColonToken
+;
+//
+namespace_declaration returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_NamespaceDeclaration", st, _member("NamespaceKeyword", NamespaceKeyword0), _member("Name", Name), _member("OpenBraceToken", OpenBraceToken0), _member("Externs", Externs), _member("Usings", Usings), _member("Members", Members), _member("CloseBraceToken", CloseBraceToken0), _member("SemicolonToken", SemicolonToken0));}
+:NamespaceKeyword0=NamespaceKeyword Name=name OpenBraceToken0=OpenBraceToken Externs=extern_alias_directives Usings=using_directives Members=namespace_members CloseBraceToken0=CloseBraceToken SemicolonToken0=SemicolonToken?
+;
+namespace_members returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=namespace_member {i.AddTo(ref list);})*
+;
+namespace_member returns[Node nd]
+@after{nd = i;}
+:i=namespace_declaration
+|i=type_declaration
+;
+//
+modifiers returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=modifier {i.AddTo(ref list);})*
+;
+modifier returns[Node nd]
+@after{nd = t!= null ? t.Node : i;}
+:t=PublicKeyword|t=ProtectedKeyword|t=InternalKeyword|t=PrivateKeyword|t=AbstractKeyword|t=VirtualKeyword|t=OverrideKeyword|t=SealedKeyword
+|t=NewKeyword|t=StaticKeyword|t=ReadOnlyKeyword|t=ConstKeyword|t=VolatileKeyword|t=ExternKeyword|t=UnsafeKeyword|t=FixedKeyword|i=cAsyncKeyword
+;
+//
+type_declaration returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:AttributeLists=attribute_lists Modifiers=modifiers i=type_declaration_main[st, AttributeLists, Modifiers]
+;
+type_declaration_main[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = i;}
+:i=class_declaration[st, AttributeLists, Modifiers]
+|i=struct_declaration[st, AttributeLists, Modifiers]
+|i=interface_declaration[st, AttributeLists, Modifiers]
+|i=enum_declaration[st, AttributeLists, Modifiers]
+|i=delegate_declaration[st, AttributeLists, Modifiers]
+;
+delegate_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_DelegateDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("DelegateKeyword", DelegateKeyword0), _member("ReturnType", ReturnType), _member("Identifier", Identifier), _member("TypeParameterList", TypeParameterList), _member("ParameterList", ParameterList), _member("ConstraintClauses", ConstraintClauses), _member("SemicolonToken", SemicolonToken0));}
+:DelegateKeyword0=DelegateKeyword ReturnType=type Identifier=IdentifierToken TypeParameterList=type_parameter_list? ParameterList=parameter_list ConstraintClauses=type_parameter_constraint_clauses SemicolonToken0=SemicolonToken
+;
+enum_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_EnumDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("EnumKeyword", EnumKeyword0), _member("Identifier", Identifier),_member("BaseList", BaseList), _member("OpenBraceToken", OpenBraceToken0), _member("Members", Members), _member("CloseBraceToken", CloseBraceToken0), _member("SemicolonToken", SemicolonToken0));}
+:EnumKeyword0=EnumKeyword Identifier=IdentifierToken BaseList=base_list? OpenBraceToken0=OpenBraceToken Members=enum_member_declarations? CloseBraceToken0=CloseBraceToken SemicolonToken0=SemicolonToken?
+;
+enum_member_declarations returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=enum_member_declaration{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=enum_member_declaration{list.Add(i);})* (c=CommaToken{list.Add(c);})?
+;
+enum_member_declaration returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_EnumMemberDeclaration", st, _member("AttributeLists", AttributeLists), _member("Identifier", Identifier), _member("EqualsValue", EqualsValue));}
+:AttributeLists=attribute_lists Identifier=IdentifierToken EqualsValue=equals_value_clause?
+;
+class_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_ClassDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("ClassKeyword", ClassKeyword0), _member("Identifier", Identifier), _member("TypeParameterList", TypeParameterList), _member("BaseList", BaseList), _member("ConstraintClauses", ConstraintClauses), _member("OpenBraceToken", OpenBraceToken0), _member("Members", Members), _member("CloseBraceToken", CloseBraceToken0), _member("SemicolonToken", SemicolonToken0));}
+:(m=cPartialKeyword{Modifiers = Modifiers.AddListItem(m);})? ClassKeyword0=ClassKeyword Identifier=IdentifierToken TypeParameterList=type_parameter_list? BaseList=base_list? ConstraintClauses=type_parameter_constraint_clauses OpenBraceToken0=OpenBraceToken Members=type_members CloseBraceToken0=CloseBraceToken SemicolonToken0=SemicolonToken?
+;
+struct_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_StructDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("StructKeyword", StructKeyword0), _member("Identifier", Identifier), _member("TypeParameterList", TypeParameterList), _member("BaseList", BaseList), _member("ConstraintClauses", ConstraintClauses), _member("OpenBraceToken", OpenBraceToken0), _member("Members", Members), _member("CloseBraceToken", CloseBraceToken0), _member("SemicolonToken", SemicolonToken0));}
+:(m=cPartialKeyword{Modifiers = Modifiers.AddListItem(m);})? StructKeyword0=StructKeyword Identifier=IdentifierToken TypeParameterList=type_parameter_list? BaseList=base_list? ConstraintClauses=type_parameter_constraint_clauses OpenBraceToken0=OpenBraceToken Members=type_members CloseBraceToken0=CloseBraceToken SemicolonToken0=SemicolonToken?
+;
+interface_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_InterfaceDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("InterfaceKeyword", InterfaceKeyword0), _member("Identifier", Identifier), _member("TypeParameterList", TypeParameterList), _member("BaseList", BaseList), _member("ConstraintClauses", ConstraintClauses), _member("OpenBraceToken", OpenBraceToken0), _member("Members", Members), _member("CloseBraceToken", CloseBraceToken0), _member("SemicolonToken", SemicolonToken0));}
+:(m=cPartialKeyword{Modifiers = Modifiers.AddListItem(m);})? InterfaceKeyword0=InterfaceKeyword Identifier=IdentifierToken TypeParameterList=type_parameter_list? BaseList=base_list? ConstraintClauses=type_parameter_constraint_clauses OpenBraceToken0=OpenBraceToken Members=type_members CloseBraceToken0=CloseBraceToken SemicolonToken0=SemicolonToken?
+;
+//
+type_members returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=type_member {i.AddTo(ref list);})*
+;
+type_member returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:AttributeLists=attribute_lists Modifiers=modifiers (
+    (((cPartialKeyword VoidKeyword) => cPartialKeyword)? type explicit_interface_specifier? IdentifierToken type_parameter_list? OpenParenToken) => i=method_declaration[st, AttributeLists, Modifiers]
+    |(type explicit_interface_specifier? IdentifierToken OpenBraceToken) => i=property_declaration[st, AttributeLists, Modifiers]
+    |(type explicit_interface_specifier? ThisKeyword) => i=indexer_declaration[st, AttributeLists, Modifiers]
+    |(type OperatorKeyword) => i=operator_declaration[st, AttributeLists, Modifiers]
+    |(IdentifierToken OpenParenToken) => i=constructor_declaration[st, AttributeLists, Modifiers]
+    |(variable_declaration SemicolonToken) => i=field_declaration[st, AttributeLists, Modifiers]
+    |(EventKeyword variable_declaration SemicolonToken) => i=event_field_declaration[st, AttributeLists, Modifiers]
+    |(EventKeyword type explicit_interface_specifier? IdentifierToken OpenBraceToken) => i=event_declaration[st, AttributeLists, Modifiers]
+    |i=destructor_declaration[st, AttributeLists, Modifiers]
+    |i=conversion_operator_declaration[st, AttributeLists, Modifiers]
+    |i=type_declaration_main[st, AttributeLists, Modifiers]
+    //fixed-size-buffer-declaration???
+)
+;
+method_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_MethodDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("ReturnType", ReturnType), _member("ExplicitInterfaceSpecifier", ExplicitInterfaceSpecifier), _member("Identifier", Identifier), _member("TypeParameterList", TypeParameterList), _member("ParameterList", ParameterList), _member("ConstraintClauses", ConstraintClauses), _member("Body", Body), _member("SemicolonToken", SemicolonToken0));}
+:((cPartialKeyword VoidKeyword) => m=cPartialKeyword{Modifiers = Modifiers.AddListItem(m);})? ReturnType=type ExplicitInterfaceSpecifier=explicit_interface_specifier? Identifier=IdentifierToken TypeParameterList=type_parameter_list? ParameterList=parameter_list ConstraintClauses=type_parameter_constraint_clauses Body=block? SemicolonToken0=SemicolonToken?
+;
+field_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_FieldDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("Declaration", Declaration), _member("SemicolonToken", SemicolonToken0));}
+:Declaration=variable_declaration SemicolonToken0=SemicolonToken
+;
+event_field_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_EventFieldDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("EventKeyword", EventKeyword0),_member("Declaration", Declaration), _member("SemicolonToken", SemicolonToken0));}
+:EventKeyword0=EventKeyword Declaration=variable_declaration SemicolonToken0=SemicolonToken
+;
+event_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_EventDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("EventKeyword", EventKeyword0), _member("Type", Type), _member("ExplicitInterfaceSpecifier", ExplicitInterfaceSpecifier), _member("Identifier", Identifier), _member("AccessorList", AccessorList));}
+:EventKeyword0=EventKeyword Type=type ExplicitInterfaceSpecifier=explicit_interface_specifier? Identifier=IdentifierToken AccessorList=accessor_list
+;
+operator_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_OperatorDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("ReturnType", ReturnType), _member("OperatorKeyword", OperatorKeyword0), _member("OperatorToken", OperatorToken), _member("ParameterList", ParameterList), _member("Body", Body), _member("SemicolonToken", SemicolonToken0));}
+:ReturnType=type OperatorKeyword0=OperatorKeyword OperatorToken=overloadable_operator ParameterList=parameter_list Body=block? SemicolonToken0=SemicolonToken?
+;
+overloadable_operator returns[Node nd]
+@init{Node tnd = null;}
+@after{nd = t != null ? t.Node : tnd;}
+:t=PlusToken|t=MinusToken|t=AsteriskEqualsToken|t=SlashToken|t=PercentToken|t=AmpersandToken|t=BarToken|t=CaretToken|t=ExclamationToken|t=TildeToken
+|t=PlusPlusToken|t=MinusMinusToken|t=LessThanLessThanToken|t=EqualsEqualsToken|t=ExclamationEqualsToken|t=GreaterThanToken|t=LessThanToken
+|t=GreaterThanEqualsToken|t=LessThanEqualsToken|t=TrueKeyword|t=FalseKeyword
+|t1=GreaterThanToken t2=GreaterThanToken{ tnd = _merge(t1, t2, CSTokens.GreaterThanGreaterThanTokenKind, "invalid '>>' token"); }
+;
+conversion_operator_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_ConversionOperatorDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("ImplicitOrExplicitKeyword", k), _member("OperatorKeyword", OperatorKeyword0), _member("Type", Type), _member("ParameterList", ParameterList), _member("Body", Body), _member("SemicolonToken", SemicolonToken0));}
+:(k=ImplicitKeyword|k=ExplicitKeyword) OperatorKeyword0=OperatorKeyword Type=type ParameterList=parameter_list Body=block? SemicolonToken0=SemicolonToken?
+;
+constructor_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_ConstructorDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("Identifier", Identifier), _member("ParameterList", ParameterList), _member("Initializer", Initializer), _member("Body", Body), _member("SemicolonToken", SemicolonToken0));}
+:Identifier=IdentifierToken ParameterList=parameter_list Initializer=constructor_initializer? Body=block? SemicolonToken0=SemicolonToken?
+;
+constructor_initializer returns[Node nd]
+@init{var st = _start(); Node knd = null;}
+@after{nd = _struct("_ConstructorInitializer", st, _cskindmember(knd), _member("ColonToken", ColonToken0), _member("ThisOrBaseKeyword", k), _member("ArgumentList", ArgumentList));}
+:ColonToken0=ColonToken (k=ThisKeyword{knd=CSTokens.ThisConstructorInitializerKind;} | k=BaseKeyword{knd=CSTokens.BaseConstructorInitializerKind;}) ArgumentList=argument_list
+;
+destructor_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_DestructorDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("TildeToken", TildeToken0), _member("Identifier", Identifier), _member("ParameterList", ParameterList), _member("Body", Body), _member("SemicolonToken", SemicolonToken0));}
+:TildeToken0=TildeToken Identifier=IdentifierToken ParameterList=parameter_list Body=block? SemicolonToken0=SemicolonToken?
+;
+property_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_PropertyDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("Type", Type), _member("ExplicitInterfaceSpecifier", ExplicitInterfaceSpecifier), _member("Identifier", Identifier), _member("AccessorList", AccessorList));}
+:Type=type ExplicitInterfaceSpecifier=explicit_interface_specifier? Identifier=IdentifierToken AccessorList=accessor_list
+;
+indexer_declaration[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("_IndexerDeclaration", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("Type", Type), _member("ExplicitInterfaceSpecifier", ExplicitInterfaceSpecifier), _member("ThisKeyword", ThisKeyword0), _member("ParameterList", ParameterList), _member("AccessorList", AccessorList));}
+:Type=type ExplicitInterfaceSpecifier=explicit_interface_specifier? ThisKeyword0=ThisKeyword ParameterList=bracketed_parameter_list AccessorList=accessor_list
+;
+accessor_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AccessorList", st, _member("OpenBraceToken", OpenBraceToken0), _member("Accessors", Accessors), _member("CloseBraceToken", CloseBraceToken0));}
+:OpenBraceToken0=OpenBraceToken Accessors=accessor_declarations CloseBraceToken0=CloseBraceToken
+;
+accessor_declarations returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=accessor_declaration {i.AddTo(ref list);})+
+;
+accessor_declaration returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_AccessorDeclaration", st, _cskindmember(knd),_member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers),  _member("Keyword", k), _member("Body", Body), _member("SemicolonToken", SemicolonToken0));}
+:AttributeLists=attribute_lists Modifiers=modifiers (
+    k=cGetKeyword{knd= CSTokens.GetAccessorDeclarationKind;}
+    |k=cSetKeyword{knd= CSTokens.SetAccessorDeclarationKind;}
+    |k=cAddKeyword{knd= CSTokens.AddAccessorDeclarationKind;}
+    |k=cRemoveKeyword{knd= CSTokens.RemoveAccessorDeclarationKind;}
+) Body=block? SemicolonToken0=SemicolonToken?
+;
+//
+base_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_BaseList", st, _member("ColonToken", ColonToken0), _member("Types", Types));}
+:ColonToken0=ColonToken Types=base_list_types
+;
+base_list_types returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=base_list_type{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=base_list_type{list.Add(i);})*
+;
+base_list_type returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_SimpleBaseType", st, _member("Type", Type));}
+:Type=predefined_type
+|Type=name
+;
+explicit_interface_specifier returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ExplicitInterfaceSpecifier", st, _member("Name", Name), _member("DotToken", DotToken0));}
+:Name=non_greedy_name DotToken0=DotToken
+;
+//
+type_parameter_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TypeParameterList", st, _member("LessThanToken", LessThanToken0), _member("Parameters", Parameters), _member("GreaterThanToken", GreaterThanToken0));}
+:LessThanToken0=LessThanToken Parameters=type_parameters GreaterThanToken0=GreaterThanToken
+;
+type_parameters returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=type_parameter{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=type_parameter{list.Add(i);})*
+;
+type_parameter returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TypeParameter", st,_member("AttributeLists", AttributeLists), _member("VarianceKeyword", k), _member("Identifier", Identifier));}
+:AttributeLists=attribute_lists (k=InKeyword|k=OutKeyword)? Identifier=IdentifierToken
+;
+//
+type_parameter_constraint_clauses returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=type_parameter_constraint_clause {i.AddTo(ref list);})*
+;
+type_parameter_constraint_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TypeParameterConstraintClause", st, _member("WhereKeyword", WhereKeyword0), _member("Identifier", Identifier), _member("ColonToken", ColonToken0), _member("Constraints", Constraints));}
+:WhereKeyword0=cWhereKeyword Identifier=identifier_name ColonToken0=ColonToken Constraints=type_parameter_constraints
+;
+type_parameter_constraints returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=type_parameter_constraint{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=type_parameter_constraint{list.Add(i);})*
+;
+type_parameter_constraint returns[Node nd]
+@after{nd = i;}
+:i=constructor_constraint
+|i=type_constraint
+|i=class_or_struct_constraint
+;
+constructor_constraint returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ConstructorConstraint", st, _member("NewKeyword", NewKeyword0), _member("OpenParenToken", OpenParenToken0), _member("CloseParenToken", CloseParenToken0));}
+:NewKeyword0=NewKeyword OpenParenToken0=OpenParenToken CloseParenToken0=CloseParenToken
+;
+type_constraint returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TypeConstraint", st, _member("Type", Type));}
+:Type=type
+;
+class_or_struct_constraint returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_ClassOrStructConstraint", st, _cskindmember(knd), _member("ClassOrStructKeyword", k));}
+:k=ClassKeyword{knd=CSTokens.ClassConstraintKind;}|k=StructKeyword{knd=CSTokens.StructConstraintKind;}
+;
+//
+argument_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ArgumentList", st, _member("OpenParenToken", OpenParenToken0), _member("Arguments", Arguments), _member("CloseParenToken", CloseParenToken0));}
+:OpenParenToken0=OpenParenToken Arguments=arguments? CloseParenToken0=CloseParenToken
+;
+bracketed_argument_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_BracketedArgumentList", st, _member("OpenBracketToken", OpenBracketToken0), _member("Arguments", Arguments), _member("CloseBracketToken", CloseBracketToken0));}
+:OpenBracketToken0=OpenBracketToken Arguments=arguments? CloseBracketToken0=CloseBracketToken
+;
+arguments returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=argument{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=argument{list.Add(i);})*
+;
+argument returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_Argument", st, _member("NameColon", NameColon), _member("RefOrOutKeyword", k), _member("Expression", Expression));}
+:NameColon=name_colon? ((RefKeyword|OutKeyword) => (k=RefKeyword|k=OutKeyword))? Expression=expression
+;
+//
+parameter_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ParameterList", st, _member("OpenParenToken", OpenParenToken0), _member("Parameters", Parameters), _member("CloseParenToken", CloseParenToken0));}
+:OpenParenToken0=OpenParenToken Parameters=parameters? CloseParenToken0=CloseParenToken
+;
+bracketed_parameter_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_BracketedParameterList", st, _member("OpenBracketToken", OpenBracketToken0), _member("Parameters", Parameters), _member("CloseBracketToken", CloseBracketToken0));}
+:OpenBracketToken0=OpenBracketToken Parameters=parameters? CloseBracketToken0=CloseBracketToken
+;
+parameters returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=parameter{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=parameter{list.Add(i);})*
+;
+parameter returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_Parameter", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("Type", Type), _member("Identifier", Identifier), _member("Default", Default));}
+:AttributeLists=attribute_lists Modifiers=parameter_modifiers Type=type? Identifier=IdentifierToken Default=equals_value_clause?
+;
+parameter_modifiers returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=parameter_modifier {i.AddTo(ref list);})*
+;
+parameter_modifier returns[Node nd]
+@after{nd = i.Node;}
+:i=RefKeyword|i=OutKeyword|i=ThisKeyword|i=ParamsKeyword
+;
+equals_value_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_EqualsValueClause", st, _member("EqualsToken", EqualsToken0), _member("Value", Value));}
+:EqualsToken0=EqualsToken (Value=expression|Value=array_initializer/*|Value=stackalloc_initializer*/)
+;
+//
+statement returns[Node nd]
+@after{nd = i;}
+:(IdentifierToken ColonToken) => i=labeled_statement
+|(local_declaration_statement) => i=local_declaration_statement
+|i=embedded_statement
+;
+labeled_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_LabeledStatement", st, _member("Identifier", Identifier), _member("ColonToken", ColonToken0), _member("Statement", Statement));}
+:Identifier=IdentifierToken ColonToken0=ColonToken Statement=statement
+;
+//
+local_declaration_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_LocalDeclarationStatement", st, _member("Modifiers", Modifiers), _member("Declaration", Declaration), _member("SemicolonToken", SemicolonToken0));}
+:Modifiers=modifiers Declaration=variable_declaration SemicolonToken0=SemicolonToken
+;
+variable_declaration returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_VariableDeclaration", st, _member("Type", Type), _member("Variables", Variables));}
+:Type=type Variables=variable_declarators
+;
+variable_declarators returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=variable_declarator{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=variable_declarator{list.Add(i);})*
+;
+variable_declarator returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_VariableDeclarator", st, _member("Identifier", Identifier), _member("ArgumentList", (Node)null/*ArgumentList*/), _member("Initializer", Initializer));}
+:Identifier=IdentifierToken /*ArgumentList=bracketed_argument_list?*/ Initializer=equals_value_clause?
+;
+//
+embedded_statement returns[Node nd]
+@after{nd = i;}
+:i=block|i=empty_statement|i=expression_statement|i=if_statement|switch_statement|i=while_statement|i=do_statement|i=for_statement|i=foreach_statement
+|i=break_statement|i= continue_statement|i= goto_statement|i= return_statement|i= throw_statement|i=try_statement|i=checked_statement|i=lock_statement
+|i=using_statement|i=yield_statement|i=unsafe_statement|i=fixed_statement
+;
+block returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_Block", st, _member("OpenBraceToken", OpenBraceToken0), _member("Statements", Statements), _member("CloseBraceToken", CloseBraceToken0));}
+:OpenBraceToken0=OpenBraceToken Statements=statements? CloseBraceToken0=CloseBraceToken
+;
+statements returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=statement {i.AddTo(ref list);})+
+;
+empty_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_EmptyStatement", st, _member("SemicolonToken", SemicolonToken0));}
+:SemicolonToken0=SemicolonToken
+;
+expression_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ExpressionStatement", st, _member("Expression", Expression), _member("SemicolonToken", SemicolonToken0));}
+:Expression=statement_expression SemicolonToken0=SemicolonToken
+;
+statement_expression returns[Node nd]
+@after{nd = i;}
+:(prefix_unary_expression assignment_expression_operator) => i=assignment_expression
+|i=prefix_unary_expression
+;
+statement_expressions returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=statement_expression{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=statement_expression{list.Add(i);})*
+;
+//
+if_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_IfStatement", st, _member("IfKeyword", IfKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Condition", Condition), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement), _member("Else", Else));}
+:IfKeyword0=IfKeyword OpenParenToken0=OpenParenToken Condition=expression CloseParenToken0=CloseParenToken Statement=embedded_statement ((ElseKeyword) => Else=else_clause)?
+;
+else_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ElseClause", st, _member("ElseKeyword", ElseKeyword0), _member("Statement", Statement));}
+:ElseKeyword0=ElseKeyword Statement=embedded_statement
+;
+switch_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_SwitchStatement", st, _member("SwitchKeyword", SwitchKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Expression", Expression), _member("CloseParenToken", CloseParenToken0), _member("OpenBraceToken", OpenBraceToken0), _member("Sections", Sections), _member("CloseBraceToken", CloseBraceToken0));}
+:SwitchKeyword0=SwitchKeyword OpenParenToken0=OpenParenToken Expression=expression CloseParenToken0=CloseParenToken OpenBraceToken0=OpenBraceToken Sections=switch_sections CloseBraceToken0=CloseBraceToken
+;
+switch_sections returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=switch_section {i.AddTo(ref list);})*
+;
+switch_section returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_SwitchSection", st, _member("Labels", Labels), _member("Statements", Statements));}
+:Labels=switch_labels Statements=statements
+;
+switch_labels returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=switch_label {i.AddTo(ref list);})+
+;
+switch_label returns[Node nd]
+@after{nd = i;}
+:i=case_switch_label|i=default_switch_label
+;
+case_switch_label returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_CaseSwitchLabel", st, _member("Keyword", Keyword), _member("Value", Value), _member("ColonToken", ColonToken0));}
+:Keyword=CaseKeyword Value=expression ColonToken0=ColonToken
+;
+default_switch_label returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_DefaultSwitchLabel", st, _member("Keyword", Keyword), _member("ColonToken", ColonToken0));}
+:Keyword=DefaultKeyword ColonToken0=ColonToken
+;
+
+//
+while_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_WhileStatement", st, _member("WhileKeyword", WhileKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Condition", Condition), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement));}
+:WhileKeyword0=WhileKeyword OpenParenToken0=OpenParenToken Condition=expression CloseParenToken0=CloseParenToken Statement=embedded_statement
+;
+do_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_DoStatement", st, _member("DoKeyword", DoKeyword0), _member("Statement", Statement), _member("WhileKeyword", WhileKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Condition", Condition), _member("CloseParenToken", CloseParenToken0),_member("SemicolonToken", SemicolonToken0));}
+:DoKeyword0=DoKeyword Statement=embedded_statement WhileKeyword0=WhileKeyword OpenParenToken0=OpenParenToken Condition=expression CloseParenToken0=CloseParenToken SemicolonToken0=SemicolonToken
+;
+for_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ForStatement", st, _member("ForKeyword", ForKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Declaration", Declaration), _member("Initializers", Initializers), _member("FirstSemicolonToken", FirstSemicolonToken), _member("Condition", Condition), _member("SecondSemicolonToken", SecondSemicolonToken), _member("Incrementors", Incrementors), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement));}
+:ForKeyword0=ForKeyword OpenParenToken0=OpenParenToken ((variable_declaration) => Declaration=variable_declaration|Initializers=statement_expressions)? FirstSemicolonToken=SemicolonToken 
+    Condition=expression? SecondSemicolonToken=SemicolonToken Incrementors=statement_expressions? CloseParenToken0=CloseParenToken Statement=embedded_statement
+;
+foreach_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ForEachStatement", st, _member("ForEachKeyword", ForEachKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Type", Type), _member("Identifier", Identifier), _member("InKeyword", InKeyword0), _member("Expression", Expression), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement));}
+:ForEachKeyword0=ForEachKeyword OpenParenToken0=OpenParenToken Type=type Identifier=IdentifierToken InKeyword0=InKeyword Expression=expression CloseParenToken0=CloseParenToken Statement=embedded_statement
+;
+//
+break_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_BreakStatement", st, _member("BreakKeyword", BreakKeyword0), _member("SemicolonToken", SemicolonToken0));}
+:BreakKeyword0=BreakKeyword SemicolonToken0=SemicolonToken
+;
+continue_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ContinueStatement", st, _member("ContinueKeyword", ContinueKeyword0), _member("SemicolonToken", SemicolonToken0));}
+:ContinueKeyword0=ContinueKeyword SemicolonToken0=SemicolonToken
+;
+goto_statement returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_GotoStatement", st, _cskindmember(knd),_member("GotoKeyword", GotoKeyword0), _member("CaseOrDefaultKeyword", k),  _member("Expression", Expression), _member("SemicolonToken", SemicolonToken0));}
+:GotoKeyword0=GotoKeyword (
+	k=CaseKeyword{knd=CSTokens.GotoCaseStatementKind;} Expression=expression
+	|k=DefaultKeyword{knd=CSTokens.GotoDefaultStatementKind;}
+	|Expression=identifier_name{knd=CSTokens.GotoStatementKind;}
+) SemicolonToken0=SemicolonToken
+;
+return_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ReturnStatement", st, _member("ReturnKeyword", ReturnKeyword0), _member("Expression", Expression), _member("SemicolonToken", SemicolonToken0));}
+:ReturnKeyword0=ReturnKeyword Expression=expression? SemicolonToken0=SemicolonToken
+;
+throw_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ThrowStatement", st, _member("ThrowKeyword", ThrowKeyword0), _member("Expression", Expression), _member("SemicolonToken", SemicolonToken0));}
+:ThrowKeyword0=ThrowKeyword Expression=expression? SemicolonToken0=SemicolonToken
+;
+//
+try_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TryStatement", st, _member("TryKeyword", TryKeyword0), _member("Block", Block), _member("Catches", Catches), _member("Finally", Finally));}
+:TryKeyword0=TryKeyword Block=block Catches=catch_clauses Finally=finally_clause?
+;
+catch_clauses returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=catch_clause {i.AddTo(ref list);})*
+;
+catch_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_CatchClause", st, _member("CatchKeyword", CatchKeyword0), _member("Declaration", Declaration), _member("Block", Block));}
+:CatchKeyword0=CatchKeyword Declaration=catch_declaration? Block=block
+;
+catch_declaration returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_CatchDeclaration", st, _member("OpenParenToken", OpenParenToken0), _member("Type", Type), _member("Identifier", Identifier), _member("CloseParenToken", CloseParenToken0));}
+:OpenParenToken0=OpenParenToken Type=type Identifier=IdentifierToken? CloseParenToken0=CloseParenToken
+;
+finally_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_FinallyClause", st, _member("FinallyKeyword", FinallyKeyword0), _member("Block", Block));}
+:FinallyKeyword0=FinallyKeyword Block=block
+;
+//
+checked_statement returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_CheckedStatement", st, _cskindmember(knd), _member("CheckedOrUncheckedKeyword", k), _member("Block", Block));}
+:(k=CheckedKeyword{knd=CSTokens.CheckedStatementKind;} | k=UncheckedKeyword{knd=CSTokens.UncheckedStatementKind;}) Block=block
+;
+lock_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_LockStatement", st, _member("LockKeyword", LockKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Expression", Expression), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement));}
+:LockKeyword0=LockKeyword OpenParenToken0=OpenParenToken Expression=expression CloseParenToken0=CloseParenToken Statement=embedded_statement
+;
+using_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_UsingStatement", st, _member("UsingKeyword", UsingKeyword0), _member("OpenParenToken", OpenParenToken0),_member("Declaration", Declaration), _member("Expression", Expression), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement));}
+:UsingKeyword0=UsingKeyword OpenParenToken0=OpenParenToken (((variable_declaration) => Declaration=variable_declaration) | Expression=expression) CloseParenToken0=CloseParenToken Statement=embedded_statement
+;
+yield_statement returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_YieldStatement", st, _cskindmember(knd), _member("YieldKeyword", YieldKeyword0), _member("ReturnOrBreakKeyword", k), _member("Expression", Expression), _member("SemicolonToken", SemicolonToken0));}
+:YieldKeyword0=cYieldKeyword (
+    k=ReturnKeyword{knd=CSTokens.YieldReturnStatementKind;} Expression=expression 
+    |k=BreakKeyword{knd=CSTokens.YieldBreakStatementKind;}
+) SemicolonToken0=SemicolonToken
+;
+//
+unsafe_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_UnsafeStatement", st, _member("UnsafeKeyword", UnsafeKeyword0), _member("Block", Block));}
+:UnsafeKeyword0=UnsafeKeyword Block=block
+;
+fixed_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_FixedStatement", st, _member("FixedKeyword", FixedKeyword0), _member("OpenParenToken", OpenParenToken0), _member("Declaration", Declaration), _member("CloseParenToken", CloseParenToken0), _member("Statement", Statement));}
+:FixedKeyword0=FixedKeyword OpenParenToken0=OpenParenToken Declaration=variable_declaration CloseParenToken0=CloseParenToken Statement=embedded_statement
+;
+//
+//
+expression returns[Node nd]
+@after{nd = i;}
+:(prefix_unary_expression assignment_expression_operator) => i=assignment_expression
+|i=non_assignment_expression
+;
+assignment_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AssignmentExpression", st, _cskindmember(p.Kind), _member(CS.BinExprNodeLeftLabel, Left), _member(CS.BinExprNodeTokenLabel, p.Token), _member(CS.BinExprNodeRightLabel, Right));}
+:Left=prefix_unary_expression p=assignment_expression_operator Right=expression
+;
+assignment_expression_operator returns[TokenKindPair p]
+@init{Node knd = null; Node tnd = null;}
+@after{p = new TokenKindPair(t != null ? t.Node : tnd, knd);}
+:t=EqualsToken{knd=CSTokens.SimpleAssignmentExpressionKind;}
+|t=PlusEqualsToken{knd=CSTokens.AddAssignmentExpressionKind;}
+|t=MinusEqualsToken{knd=CSTokens.SubtractAssignmentExpressionKind;}
+|t=AsteriskEqualsToken{knd=CSTokens.MultiplyAssignmentExpressionKind;}
+|t=SlashEqualsToken{knd=CSTokens.DivideAssignmentExpressionKind;}
+|t=PercentEqualsToken{knd=CSTokens.ModuloAssignmentExpressionKind;}
+|t=AmpersandEqualsToken{knd=CSTokens.AndAssignmentExpressionKind;}
+|t=CaretEqualsToken{knd=CSTokens.ExclusiveOrAssignmentExpressionKind;}
+|t=BarEqualsToken{knd=CSTokens.OrAssignmentExpressionKind;}
+|t=LessThanLessThanEqualsToken{knd=CSTokens.LeftShiftAssignmentExpressionKind;}
+|t1=GreaterThanToken t2=GreaterThanEqualsToken{tnd=_merge(t1, t2, CSTokens.GreaterThanGreaterThanEqualsTokenKind, "invalid '>>=' token"); knd=CSTokens.RightShiftAssignmentExpressionKind;}
+;
+non_assignment_expression returns[Node nd]
+@after{nd = i;}
+:(cAsyncKeyword? (parameter|parameter_list) EqualsGreaterThanToken) => i=lambda_expression
+|(cFromKeyword type? IdentifierToken) => i=query_expression
+|i=conditional_expression
+;
+lambda_expression returns[Node nd]
+@after{nd = i;}
+:i=simple_lambda_expression
+|i=parenthesized_lambda_expression
+;
+simple_lambda_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_SimpleLambdaExpression", st, _member("AsyncKeyword", AsyncKeyword), _member("Parameter", Parameter), _member("EqualsGreaterThanToken", EqualsGreaterThanToken0), _member("Body", Body));}
+:(AsyncKeyword=cAsyncKeyword)? Parameter=parameter EqualsGreaterThanToken0=EqualsGreaterThanToken Body=lambda_body
+;
+parenthesized_lambda_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ParenthesizedLambdaExpression", st, _member("AsyncKeyword", AsyncKeyword), _member("ParameterList", ParameterList), _member("EqualsGreaterThanToken", EqualsGreaterThanToken0), _member("Body", Body));}
+:(AsyncKeyword=cAsyncKeyword)? ParameterList=parameter_list EqualsGreaterThanToken0=EqualsGreaterThanToken Body=lambda_body
+;
+lambda_body returns[Node nd]
+@after{nd = i;}
+:i=expression
+|i=block
+;
+conditional_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=null_coalescing_expression (
+    QuestionToken0=QuestionToken WhenTrue=expression ColonToken0=ColonToken WhenFalse=expression{
+        i = _struct("_ConditionalExpression", st, _member("Condition", i), _member("QuestionToken", QuestionToken0), _member("WhenTrue", WhenTrue), _member("ColonToken", ColonToken0), _member("WhenFalse", WhenFalse));
+    }
+)?
+;
+null_coalescing_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=logical_or_expression (
+    t=QuestionQuestionToken Right=null_coalescing_expression{
+        i = _struct(CS.BinExprNodeLabel, st, _cskindmember(CSTokens.CoalesceExpressionKind), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));
+    }
+)?
+;
+logical_or_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=logical_and_expression (
+    t=BarBarToken Right=logical_and_expression{
+        i = _struct(CS.BinExprNodeLabel, st, _cskindmember(CSTokens.LogicalOrExpressionKind), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));
+    }
+)*
+;
+logical_and_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=bitwise_or_expression (
+    t=AmpersandAmpersandToken Right=bitwise_or_expression{
+        i = _struct(CS.BinExprNodeLabel, st, _cskindmember(CSTokens.LogicalAndExpressionKind), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));
+    }
+)*
+;
+bitwise_or_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=exclusive_or_expression (
+    t=BarToken Right=exclusive_or_expression{
+        i = _struct(CS.BinExprNodeLabel, st, _cskindmember(CSTokens.BitwiseOrExpressionKind), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));
+    }
+)*
+;
+exclusive_or_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=bitwise_and_expression (
+    t=CaretToken Right=bitwise_and_expression{
+        i = _struct(CS.BinExprNodeLabel, st, _cskindmember(CSTokens.ExclusiveOrExpressionKind), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));
+    }
+)*
+;
+bitwise_and_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=equality_expression (
+    t=AmpersandToken Right=equality_expression{
+	    i = _struct(CS.BinExprNodeLabel, st, _cskindmember(CSTokens.BitwiseAndExpressionKind), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));
+    }
+)*
+;
+equality_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd=i;}
+:i=relational_expression (
+    (
+        t=EqualsEqualsToken{knd=CSTokens.EqualsExpressionKind;}
+        |t=ExclamationEqualsToken{knd=CSTokens.NotEqualsExpressionKind;}
+    ) Right=relational_expression{i = _struct(CS.BinExprNodeLabel, st, _cskindmember(knd), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));}
+)*
+;
+relational_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd=i;}
+:i=shift_expression (
+    (
+        (t=LessThanToken{knd=CSTokens.LessThanExpressionKind;}
+            |t=LessThanEqualsToken{knd=CSTokens.LessThanOrEqualExpressionKind;}
+            |t=GreaterThanToken{knd=CSTokens.GreaterThanExpressionKind;}
+            |t=GreaterThanEqualsToken{knd=CSTokens.GreaterThanOrEqualExpressionKind;}
+            ) Right=shift_expression
+	    |t=IsKeyword{knd=CSTokens.IsExpressionKind;} Right=is_expression_type
+	    |t=AsKeyword{knd=CSTokens.AsExpressionKind;} Right=type
+	){i = _struct(CS.BinExprNodeLabel, st, _cskindmember(knd), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));}
+)*
+;
+is_expression_type returns[Node nd]
+@init{var st = _start();}
+@after{nd=i;}
+:i=non_nullable_type (
+    (QuestionToken (SemicolonToken|CommaToken|CloseBracketToken|CloseBraceToken|CloseParenToken|AmpersandAmpersandToken|BarBarToken|QuestionToken)) => QuestionToken0=QuestionToken{
+	    i = _struct("_NullableType", st, _member("ElementType", i), _member("QuestionToken", QuestionToken0));
+    }
+)?
+;
+shift_expression returns[Node nd]
+@init{var st = _start();Node knd = null;Node tnd = null;}
+@after{nd = i;}
+:i=additive_expression (
+    (
+        t=LessThanLessThanToken{knd=CSTokens.LeftShiftExpressionKind;}
+        |t1=GreaterThanToken t2=GreaterThanToken {t=null; tnd = _merge(t1, t2, CSTokens.GreaterThanGreaterThanTokenKind, "invalid '>>' token"); knd=CSTokens.RightShiftExpressionKind;}
+    ) Right=additive_expression{i = _struct(CS.BinExprNodeLabel, st, _cskindmember(knd), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t!=null?t.Node:tnd), _member(CS.BinExprNodeRightLabel, Right));}
+)*
+;
+additive_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd=i;}
+:i=multiplicative_expression (
+    (
+        t=PlusToken{knd=CSTokens.AddExpressionKind;}
+        |t=MinusToken{knd=CSTokens.SubtractExpressionKind;}
+    ) Right=multiplicative_expression{i = _struct(CS.BinExprNodeLabel, st, _cskindmember(knd), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));}
+)*
+;
+multiplicative_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd=i;}
+:i=prefix_unary_expression (
+    (
+        t=AsteriskToken{knd=CSTokens.MultiplyExpressionKind;}
+        |t=SlashToken{knd=CSTokens.DivideExpressionKind;}
+        |t=PercentToken{knd=CSTokens.ModuloExpressionKind;}
+    ) Right=prefix_unary_expression {i = _struct(CS.BinExprNodeLabel, st, _cskindmember(knd), _member(CS.BinExprNodeLeftLabel, i), _member(CS.BinExprNodeTokenLabel, t), _member(CS.BinExprNodeRightLabel, Right));}
+)*
+;
+prefix_unary_expression returns[Node nd]
+@after{nd = i;}
+:i=prefix_unary_expression_common
+|i=prefix_unary_expression_await
+|(prefix_unary_expression_cast) => i=prefix_unary_expression_cast
+|i=primary_expression
+;
+prefix_unary_expression_common returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_PrefixUnaryExpression", st, _cskindmember(knd), _member("OperatorToken", t), _member("Operand", Operand));}
+:(
+    t=PlusToken{knd=CSTokens.UnaryPlusExpressionKind;}
+    |t=MinusToken{knd=CSTokens.UnaryMinusExpressionKind;}
+    |t=ExclamationToken{knd=CSTokens.LogicalNotExpressionKind;}
+    |t=TildeToken{knd=CSTokens.BitwiseNotExpressionKind;}
+    |t=AmpersandToken{knd=CSTokens.AddressOfExpressionKind;}
+    |t=AsteriskToken{knd=CSTokens.PointerIndirectionExpressionKind;}
+    |t=PlusPlusToken{knd=CSTokens.PreIncrementExpressionKind;}
+    |t=MinusMinusToken{knd=CSTokens.PreDecrementExpressionKind;}
+) Operand=prefix_unary_expression
+;
+prefix_unary_expression_await returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AwaitExpression", st, _member("AwaitKeyword", AwaitKeyword), _member("Expression", Expression));}
+:AwaitKeyword=cAwaitKeyword Expression=prefix_unary_expression
+;
+prefix_unary_expression_cast returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_CastExpression", st, _member("OpenParenToken", OpenParenToken0), _member("Type", Type), _member("CloseParenToken", CloseParenToken0), _member("Expression", Expression));}
+:OpenParenToken0=OpenParenToken Type=type CloseParenToken0=CloseParenToken Expression=prefix_unary_expression
+;
+//
+primary_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = i;}
+:(
+    i=parenthesized_expression
+    |i=literal_expression
+    |i=this_expression
+    |i=base_expression
+    |i=typeof_expression
+    |i=sizeof_expression
+    |i=default_expression
+    |i=checked_expression
+    |i=anonymous_method_expression
+    |i=creation_expression
+    |i=predefined_type
+    |i=checked_name_start
+)
+(
+    ArgumentList=bracketed_argument_list{i = _struct("_ElementAccessExpression", st, _member("Expression", i), _member("ArgumentList", ArgumentList));}
+    |ArgumentList=argument_list{i = _struct("_InvocationExpression", st, _member("Expression", i), _member("ArgumentList", ArgumentList));}
+    |(t=PlusPlusToken{knd=CSTokens.PostIncrementExpressionKind;}|t=MinusMinusToken{knd=CSTokens.PostDecrementExpressionKind;}){
+	    i = _struct("_PostfixUnaryExpression", st, _cskindmember(knd), _member("Operand", i), _member("OperatorToken", t));
+    }
+    |(t=DotToken{knd=CSTokens.SimpleMemberAccessExpressionKind;}|t=MinusGreaterThanToken{knd=CSTokens.PointerMemberAccessExpressionKind;}) Name=checked_identifier_or_generic_name{
+	    i = _struct("_MemberAccessExpression", st, _cskindmember(knd), _member("Expression", i), _member("OperatorToken", t), _member("Name", Name));
+    }
+)*
+;
+parenthesized_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ParenthesizedExpression", st, _member("OpenParenToken", OpenParenToken0), _member("Expression", Expression), _member("CloseParenToken", CloseParenToken0));}
+:OpenParenToken0=OpenParenToken Expression=expression CloseParenToken0=CloseParenToken
+;
+literal_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_LiteralExpression", st, _cskindmember(knd), _member("Token", t));}
+:t=TrueKeyword{knd=CSTokens.TrueLiteralExpressionKind;}
+|t=FalseKeyword{knd=CSTokens.FalseLiteralExpressionKind;}
+|t=NullKeyword{knd=CSTokens.NullLiteralExpressionKind;}
+|t=NumericLiteralToken{knd=CSTokens.NumericLiteralExpressionKind;}
+|t=CharacterLiteralToken{knd=CSTokens.CharacterLiteralExpressionKind;}
+|t=StringLiteralToken{knd=CSTokens.StringLiteralExpressionKind;}
+;
+this_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ThisExpression", st, _member("Token", Token));}
+:Token=ThisKeyword
+;
+base_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_BaseExpression", st, _member("Token", Token));}
+:Token=BaseKeyword
+;
+typeof_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TypeOfExpression", st, _member("Keyword", Keyword), _member("OpenParenToken", OpenParenToken0), _member("Type", Type), _member("CloseParenToken", CloseParenToken0));}
+:Keyword=TypeOfKeyword OpenParenToken0=OpenParenToken Type=type CloseParenToken0=CloseParenToken
+;
+sizeof_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_SizeOfExpression", st, _member("Keyword", Keyword), _member("OpenParenToken", OpenParenToken0), _member("Type", Type), _member("CloseParenToken", CloseParenToken0));}
+:Keyword=SizeOfKeyword OpenParenToken0=OpenParenToken Type=type CloseParenToken0=CloseParenToken
+;
+default_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_DefaultExpression", st, _member("Keyword", Keyword), _member("OpenParenToken", OpenParenToken0), _member("Type", Type), _member("CloseParenToken", CloseParenToken0));}
+:Keyword=DefaultKeyword OpenParenToken0=OpenParenToken Type=type CloseParenToken0=CloseParenToken
+;
+checked_expression returns[Node nd]
+@init{var st = _start();Node knd = null;}
+@after{nd = _struct("_CheckedExpression", st, _cskindmember(knd), _member("Keyword", Keyword), _member("OpenParenToken", OpenParenToken0), _member("Expression", Expression), _member("CloseParenToken", CloseParenToken0));}
+:(Keyword=CheckedKeyword{knd=CSTokens.CheckedExpressionKind;}|Keyword=UncheckedKeyword{knd=CSTokens.UncheckedExpressionKind;}) OpenParenToken0=OpenParenToken Expression=expression CloseParenToken0=CloseParenToken
+;
+anonymous_method_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AnonymousMethodExpression", st, _member("AsyncKeyword", AsyncKeyword), _member("DelegateKeyword", DelegateKeyword0), _member("ParameterList", ParameterList), _member("Block", Block));}
+:(AsyncKeyword=cAsyncKeyword)? DelegateKeyword0=DelegateKeyword ParameterList=parameter_list? Block=block
+;
+creation_expression returns[Node nd]
+@init{var st = _start(); CommonTokenEx st2 = null;}
+:NewKeyword0=NewKeyword{st2 = _start();} (
+    OpenBraceToken0=OpenBraceToken Initializers=anonymous_object_member_declarators? CloseBraceToken0=CloseBraceToken{
+        nd = _struct("_AnonymousObjectCreationExpression", st, _member("NewKeyword", NewKeyword0), _member("OpenBraceToken", OpenBraceToken0), _member("Initializers", Initializers), _member("CloseBraceToken", CloseBraceToken0));    
+    }
+    |OpenBracketToken0=OpenBracketToken Commas=comma_tokens CloseBracketToken0=CloseBracketToken Initializer=array_initializer{
+        nd = _struct("_ImplicitArrayCreationExpression", st, _member("NewKeyword", NewKeyword0), _member("OpenBracketToken", OpenBracketToken0), _member("Commas", Commas), _member("CloseBracketToken", CloseBracketToken0), _member("Initializer", Initializer));
+    }
+    |Type=non_array_type (
+        (ArgumentList=argument_list Initializer=object_or_collection_initializer? | Initializer=object_or_collection_initializer){
+            nd = _struct("_ObjectCreationExpression", st, _member("NewKeyword", NewKeyword0), _member("Type", Type), _member("ArgumentList", ArgumentList), _member("Initializer", Initializer));
+        }
+        |RankSpecifiers=array_rank_specifiers{Type = _struct("_ArrayType", st2, _member("ElementType", Type), _member("RankSpecifiers", RankSpecifiers));}
+            Initializer=array_initializer? {
+                nd = _struct("_ArrayCreationExpression", st, _member("NewKeyword", NewKeyword0), _member("Type", Type), _member("Initializer", Initializer));
+            }
+    )
+)
+;
+comma_tokens returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=CommaToken {i.AddTo(ref list);})*
+;
+anonymous_object_member_declarators returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=anonymous_object_member_declarator{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=anonymous_object_member_declarator{list.Add(i);})* (c=CommaToken{list.Add(c);})?
+;
+anonymous_object_member_declarator returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AnonymousObjectMemberDeclarator", st, _member("NameEquals", NameEquals), _member("Expression", Expression));}
+:((name_equals) => NameEquals=name_equals)? Expression=expression
+;
+//
+object_or_collection_initializer returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:OpenBraceToken0=OpenBraceToken (
+    (IdentifierToken EqualsToken|CloseBraceToken) => i=object_initializer[st, OpenBraceToken0]
+    |i=collection_initializer[st, OpenBraceToken0]
+)
+;
+object_initializer[CommonTokenEx st, CommonTokenEx OpenBraceToken0] returns[Node nd]
+@after{nd = _struct("_InitializerExpression", st, _cskindmember(CSTokens.ObjectInitializerExpressionKind), _member("OpenBraceToken", OpenBraceToken0), _member("Expressions", Expressions), _member("CloseBraceToken", CloseBraceToken0));}
+:Expressions=object_initializer_expressions? CloseBraceToken0=CloseBraceToken
+;
+object_initializer_expressions returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=object_initializer_expression{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=object_initializer_expression{list.Add(i);})* (c=CommaToken{list.Add(c);})?
+;
+object_initializer_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_AssignmentExpression", st, _cskindmember(CSTokens.SimpleAssignmentExpressionKind), _member(CS.BinExprNodeLeftLabel, Left), _member(CS.BinExprNodeTokenLabel, OperatorToken), _member(CS.BinExprNodeRightLabel, Right));}
+:Left=identifier_name OperatorToken=EqualsToken (Right=expression|Right=object_or_collection_initializer)
+;
+collection_initializer[CommonTokenEx st, CommonTokenEx OpenBraceToken0] returns[Node nd]
+@after{nd = _struct("_InitializerExpression", st, _cskindmember(CSTokens.CollectionInitializerExpressionKind), _member("OpenBraceToken", OpenBraceToken0), _member("Expressions", Expressions), _member("CloseBraceToken", CloseBraceToken0));}
+:Expressions=collection_initializer_expressions CloseBraceToken0=CloseBraceToken
+;
+collection_initializer_expressions returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=collection_initializer_expression{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=collection_initializer_expression{list.Add(i);})* (c=CommaToken{list.Add(c);})?
+;
+collection_initializer_expression returns[Node nd]
+@after{nd = i;}
+:i=non_assignment_expression
+|i=collection_initializer_complex_expression
+;
+collection_initializer_complex_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_InitializerExpression", st, _cskindmember(CSTokens.ComplexElementInitializerExpressionKind), _member("OpenBraceToken", OpenBraceToken0), _member("Expressions", Expressions), _member("CloseBraceToken", CloseBraceToken0));}
+:OpenBraceToken0=OpenBraceToken Expressions=expressions CloseBraceToken0=CloseBraceToken
+;
+expressions returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=expression{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=expression{list.Add(i);})* //(c=CommaToken{list.Add(c);})?
+;
+//
+array_initializer returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_InitializerExpression", st, _cskindmember(CSTokens.ArrayInitializerExpressionKind), _member("OpenBraceToken", OpenBraceToken0), _member("Expressions", Expressions), _member("CloseBraceToken", CloseBraceToken0));}
+:OpenBraceToken0=OpenBraceToken Expressions=array_initializer_expressions? CloseBraceToken0=CloseBraceToken
+;
+array_initializer_expressions returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=array_initializer_expression{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=array_initializer_expression{list.Add(i);})* (c=CommaToken{list.Add(c);})?
+;
+array_initializer_expression returns[Node nd]
+@after{nd = i;}
+:i=expression
+|i=array_initializer
+;
+//
+stackalloc_initializer returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_StackAllocArrayCreationExpression", st, _member("StackAllocKeyword", StackAllocKeyword0), _member("Type", Type));}
+:StackAllocKeyword0=StackAllocKeyword Type=type
+;
+//
+//
+query_expression returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_QueryExpression", st, _member("FromClause", FromClause), _member("Body", Body));}
+:FromClause=from_clause Body=query_body
+;
+from_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_FromClause", st, _member("FromKeyword", FromKeyword0), _member("Type", Type), _member("Identifier", Identifier), _member("InKeyword", InKeyword0), _member("Expression", Expression));}
+:FromKeyword0=cFromKeyword Type=type? Identifier=IdentifierToken InKeyword0=InKeyword Expression=expression
+;
+query_body returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_QueryBody", st, _member("Clauses", Clauses), _member("SelectOrGroup", SelectOrGroup), _member("Continuation", Continuation));}
+:Clauses=query_body_clauses SelectOrGroup=select_or_group_clause Continuation=query_continuation?
+;
+query_body_clauses returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=query_body_clause {i.AddTo(ref list);})*
+;
+query_body_clause returns[Node nd]
+@after{nd = i;}
+:i=from_clause|i=let_clause|i=join_clause|i=where_clause|i=orderby_clause
+;
+let_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_LetClause", st, _member("LetKeyword", LetKeyword0), _member("Identifier", Identifier), _member("EqualsToken", EqualsToken0), _member("Expression", Expression));}
+:LetKeyword0=cLetKeyword Identifier=IdentifierToken EqualsToken0=EqualsToken Expression=expression
+;
+join_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_JoinClause", st, _member("JoinKeyword", JoinKeyword0), _member("Type", Type), _member("Identifier", Identifier), _member("InKeyword", InKeyword0), _member("InExpression", InExpression), _member("OnKeyword", OnKeyword0), _member("LeftExpression", LeftExpression), _member("EqualsKeyword", EqualsKeyword0), _member("RightExpression", RightExpression), _member("Into", Into));}
+:JoinKeyword0=cJoinKeyword Type=type? Identifier=IdentifierToken InKeyword0=InKeyword InExpression=expression OnKeyword0=cOnKeyword LeftExpression=expression EqualsKeyword0=cEqualsKeyword RightExpression=expression Into=join_into_clause?
+;
+join_into_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_JoinIntoClause", st, _member("IntoKeyword", IntoKeyword0), _member("Identifier", Identifier));}
+:IntoKeyword0=cIntoKeyword Identifier=IdentifierToken
+;
+where_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_WhereClause", st, _member("WhereKeyword", WhereKeyword0), _member("Condition", Condition));}
+:WhereKeyword0=cWhereKeyword Condition=expression
+;
+orderby_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_OrderByClause", st, _member("OrderByKeyword", OrderByKeyword0), _member("Orderings", Orderings));}
+:OrderByKeyword0=cOrderByKeyword Orderings=orderings
+;
+orderings returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=ordering{i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=ordering{list.Add(i);})*
+;
+ordering returns[Node nd]
+@init{var st = _start(); Node knd = CSTokens.AscendingOrderingKind;}
+@after{nd = _struct("_Ordering", st, _cskindmember(knd), _member("Expression", Expression), _member("AscendingOrDescendingKeyword", k));}
+:Expression=expression (k=cAscendingKeyword|k=cDescendingKeyword{knd=CSTokens.DescendingOrderingKind;})?
+;
+select_or_group_clause returns[Node nd]
+@after{nd = i;}
+:i=select_clause
+|i=group_clause
+;
+select_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_SelectClause", st, _member("SelectKeyword", SelectKeyword0), _member("Expression", Expression));}
+:SelectKeyword0=cSelectKeyword Expression=expression
+;
+group_clause returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_GroupClause", st, _member("GroupKeyword", GroupKeyword0), _member("GroupExpression", GroupExpression), _member("ByKeyword", ByKeyword0), _member("ByExpression", ByExpression));}
+:GroupKeyword0=cGroupKeyword GroupExpression=expression ByKeyword0=cByKeyword ByExpression=expression
+;
+query_continuation returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_QueryContinuation", st, _member("IntoKeyword", IntoKeyword0), _member("Identifier", Identifier), _member("Body", Body));}
+:IntoKeyword0=cIntoKeyword Identifier=IdentifierToken Body=query_body
+;
+//
+//
+type returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:i=non_array_type (
+    (OpenBracketToken) => RankSpecifiers=array_rank_specifiers{i = _struct("_ArrayType", st, _member("ElementType", i), _member("RankSpecifiers", RankSpecifiers));}
+)?
+;
+array_rank_specifiers returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:((OpenBracketToken) => i=array_rank_specifier {i.AddTo(ref list);})+
+;
+array_rank_specifier returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_ArrayRankSpecifier", st, _member("OpenBracketToken", OpenBracketToken0), _member("Sizes", Sizes), _member("CloseBracketToken", CloseBracketToken0));}
+:OpenBracketToken0=OpenBracketToken Sizes=array_rank_specifier_sizes? CloseBracketToken0=CloseBracketToken
+;
+array_rank_specifier_sizes returns[Node nd]
+@init{var st = _start(); NodeList list = null; var label = "__";}
+@after{nd = _list(st, list, label);}
+:(c=CommaToken{c.AddTo(ref list);})+ 
+|i=expression{label=null; i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=expression{list.Add(i);})*
+;
+non_array_type returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:i=non_nullable_type (
+    (QuestionToken)=>QuestionToken0=QuestionToken{i = _struct("_NullableType", st, _member("ElementType", i), _member("QuestionToken", QuestionToken0));} 
+)?
+// (AsteriskToken0=AsteriskToken{i = _struct("_PointerType", st, _member("ElementType", i), _member("AsteriskToken", AsteriskToken0));})*
+;
+non_nullable_type returns[Node nd]
+@after{nd = i;}
+:i=name
+|i=predefined_type
+;
+predefined_type returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_PredefinedType", st, _member("Keyword", t));}
+:t=BoolKeyword|t=ByteKeyword|t=SByteKeyword|t=ShortKeyword|t=UShortKeyword|t=IntKeyword|t=UIntKeyword|t=LongKeyword|t=ULongKeyword
+|t=DoubleKeyword|t=FloatKeyword|t=DecimalKeyword|t=StringKeyword|t=CharKeyword|t=VoidKeyword|t=ObjectKeyword
+;
+//
+//
+name returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:i=name_start (
+    DotToken0=DotToken Right=identifier_or_generic_name{
+        i = _struct("_QualifiedName", st, _member("Left", i), _member("DotToken", DotToken0), _member("Right", Right));
+    }
+)*
+;
+non_greedy_name returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:i=name_start (
+    options{greedy=false;}: DotToken0=DotToken Right=identifier_or_generic_name{
+	    i = _struct("_QualifiedName", st, _member("Left", i), _member("DotToken", DotToken0), _member("Right", Right));
+    }
+)*
+;
+name_start returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:((cGlobalKeyword)=>t=cGlobalKeyword{Alias=_struct("_IdentifierName", st, _member("Identifier", t));} | Alias=identifier_name) ColonColonToken0=ColonColonToken Name=identifier_or_generic_name{
+        i = _struct("_AliasQualifiedName", st, _member("Alias", Alias), _member("ColonColonToken", ColonColonToken0), _member("Name", Name));
+    }
+|i=identifier_or_generic_name
+;
+checked_name_start returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:((cGlobalKeyword)=>t=cGlobalKeyword{Alias=_struct("_IdentifierName", st, _member("Identifier", t));} | Alias=identifier_name) ColonColonToken0=ColonColonToken Name=checked_identifier_or_generic_name{
+        i = _struct("_AliasQualifiedName", st, _member("Alias", Alias), _member("ColonColonToken", ColonColonToken0), _member("Name", Name));
+    }
+|i=checked_identifier_or_generic_name
+;
+identifier_or_generic_name returns[Node nd]
+@after{nd = i;}
+:(generic_name) => i=generic_name
+|i=identifier_name
+;
+checked_identifier_or_generic_name returns[Node nd]
+@after{nd = i;}
+:(generic_name (OpenParenToken|CloseParenToken|CloseBracketToken|CloseBraceToken|ColonToken|SemicolonToken|CommaToken|DotToken|
+    QuestionToken|EqualsEqualsToken|ExclamationEqualsToken|BarToken|CaretToken)) => i=generic_name//see C# spec 7.6.4.2
+|i=identifier_name
+;
+identifier_name returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_IdentifierName", st, _member("Identifier", Identifier));}
+:Identifier=IdentifierToken
+;
+generic_name returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_GenericName", st, _member("Identifier", Identifier), _member("TypeArgumentList", TypeArgumentList));}
+:Identifier=IdentifierToken TypeArgumentList=type_argument_list
+;
+type_argument_list returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("_TypeArgumentList", st, _member("LessThanToken", LessThanToken0), _member("Arguments", Arguments), _member("GreaterThanToken", GreaterThanToken0));}
+:LessThanToken0=LessThanToken Arguments=type_argument_list_arguments? GreaterThanToken0=GreaterThanToken
+;
+type_argument_list_arguments returns[Node nd]
+@init{var st = _start(); NodeList list = null; var label = "__";}
+@after{nd = _list(st, list, label);}
+:(c=CommaToken{c.AddTo(ref list);})+ 
+|i=type{label=null; i.AddTo(ref list);} (c=CommaToken{list.Add(c);} i=type{list.Add(i);})*
+;
+
+
+//
+//
+//W
+//
+//
+w_compilation_unit returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("CompilationUnit", st, _member("Externs", Externs), _member("Prologs", Prologs), _member("AttributeLists", AttributeLists), _member("Members", Members));}
+:Externs=extern_alias_directives Prologs=w_compilation_unit_prologs AttributeLists=global_attribute_lists Members=w_namespace_members
+;
+w_compilation_unit_prologs returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_compilation_unit_prolog {i.AddTo(ref list);})*
+;
+w_compilation_unit_prolog returns[Node nd]
+@after{nd = i;}
+:i=using_directive
+|i=w_import
+;
+w_import returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Import", st, _member("Keyword", Keyword), _member("Name", Name));}
+:Keyword=ImportKeyword Name=w_dotted_name? SemicolonToken
+;
+w_dotted_name returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list, "DottedName");}
+:i=IdentifierToken{i.AddTo(ref list);} (DotToken i=IdentifierToken{list.Add(i);})* 
+;
+w_namespace returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Namespace", st, _member("Name", Name), _member("Externs", Externs), _member("Prologs", Prologs), _member("Members", Members));}
+:NamespaceKeyword Name=name OpenBraceToken Externs=extern_alias_directives Prologs=using_directives Members=w_namespace_members CloseBraceToken SemicolonToken?
+;
+w_namespace_members returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_namespace_member {i.AddTo(ref list);})*
+;
+w_namespace_member returns[Node nd]
+@after{nd = i;}
+:i=w_namespace
+|i=w_type_declaration
+;
+w_type_declaration returns[Node nd]
+@init{var st = _start();}
+@after{nd = i;}
+:AttributeLists=attribute_lists Modifiers=modifiers i=w_type_declaration_main[st, AttributeLists, Modifiers]
+;
+w_type_declaration_main[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = i;}
+:i=class_declaration[st, AttributeLists, Modifiers]
+|i=struct_declaration[st, AttributeLists, Modifiers]
+|i=interface_declaration[st, AttributeLists, Modifiers]
+|i=enum_declaration[st, AttributeLists, Modifiers]
+|i=delegate_declaration[st, AttributeLists, Modifiers]
+|i=w_activity[st, AttributeLists, Modifiers]
+;
+w_activity[CommonTokenEx st, Node AttributeLists, Node Modifiers] returns[Node nd]
+@after{nd = _struct("Activity", st, _member("AttributeLists", AttributeLists), _member("Modifiers", Modifiers), _member("Keyword", Keyword), _member("Identifier", Identifier), _member("TypeParameterList", TypeParameterList),
+    _member("Parameters", Parameters), _member("ResultType", ResultType), _member("BaseList", BaseList), _member("ConstraintClauses", ConstraintClauses),
+    _member("Body", Body), _member("ClassMembers", ClassMembers));}
+:(m=cPartialKeyword{Modifiers = Modifiers.AddListItem(m);})? Keyword=ActivityKeyword Identifier=IdentifierToken TypeParameterList=type_parameter_list?
+    OpenParenToken Parameters=w_parameters? CloseParenToken (AsKeyword ResultType=type)? BaseList=base_list? ConstraintClauses=type_parameter_constraint_clauses
+    Body=w_sequence (HashHashToken OpenBraceToken ClassMembers=type_members CloseBraceToken)?
+;
+w_parameters returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=w_parameter{i.AddTo(ref list);} (CommaToken i=w_parameter{list.Add(i);})*
+;
+w_parameter returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Parameter", st, _member("AttributeLists", AttributeLists), _member("Modifier", Modifier), _member("Type", Type), _member("Name", Name));}
+:AttributeLists=attribute_lists Modifier=w_parameter_modifier? Type=type Name=IdentifierToken
+;
+w_parameter_modifier returns[Node nd]
+@after{nd = i.Node;}
+:i=RefKeyword|i=OutKeyword
+;
+w_variables returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:((w_variable) => i=w_variable{i.AddTo(ref list);})*
+;
+w_variable returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Variable", st, _member("Type", Type), _member("Declarators", Declarators));}
+:Type=type Declarators=w_variable_declarators SemicolonToken
+;
+w_variable_declarators returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=w_variable_declarator{i.AddTo(ref list);} (CommaToken i=w_variable_declarator{list.Add(i);})*
+;
+w_variable_declarator returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("VariableDeclarator", st, _member("Name", Name));}
+:Name=IdentifierToken
+;
+//
+w_statements returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_statement{i.AddTo(ref list);})*
+;
+w_statement returns[Node nd]
+@after{nd = i;}
+:i=w_cs_expression_statement
+|i=w_cs_block_statement
+|i=w_empty_statement
+|i=w_sequence
+|i=w_if
+|i=w_while
+|i=w_do_while
+|i=w_switch
+|i=w_throw
+|i=w_try
+|i=w_foreach
+|i=w_parallel_foreach
+|i=w_delay
+|i=w_parallel
+|i=w_pick
+|i=w_state_machine
+|i=w_flow
+|i=w_transacted
+|i=w_cancellable
+|i=w_compensable
+|i=w_confirm
+|i=w_compensate
+|i=w_persist
+|i=w_no_persist
+|i=w_terminate
+|i=w_receive
+|i=w_send_reply
+|i=w_send
+|i=w_receive_reply
+|i=w_content_corr
+|i=w_transacted_receive
+;
+w_cs_expression_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("CSharpExpression", st, _member("Expression", Expression));}
+:Expression=statement_expression SemicolonToken
+;
+w_cs_block_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("CSharpBlock", st, _member("Block", Block));}
+:HashHashToken Block=block
+;
+w_empty_statement returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Empty", st, _member("SemicolonToken", SemicolonToken0));}
+:SemicolonToken0=SemicolonToken
+;
+w_sequence returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Sequence", st, _member("Variables", Variables), _member("Members", Members));}
+:OpenBraceToken Variables=w_variables Members=w_statements CloseBraceToken
+;
+w_if returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("If", st, _member("Condition", Condition), _member("Then", Then), _member("Else", Else));}
+:IfKeyword OpenParenToken Condition=expression CloseParenToken Then=w_statement ((ElseKeyword) => ElseKeyword Else=w_statement)?
+;
+w_while returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("While", st, _member("Condition", Condition), _member("Body", Body));}
+:WhileKeyword OpenParenToken Condition=expression CloseParenToken Body=w_statement
+;
+w_do_while returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("DoWhile", st, _member("Body", Body), _member("Condition", Condition));}
+:DoKeyword Body=w_statement WhileKeyword OpenParenToken Condition=expression CloseParenToken SemicolonToken
+;
+w_switch returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Switch", st, _member("Value", Value), _member("Cases", Cases), _member("Default", Default));}
+:SwitchKeyword OpenParenToken Value=expression CloseParenToken OpenBraceToken Cases=w_switch_cases Default=w_switch_default? CloseBraceToken
+;
+w_switch_cases returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_switch_case {i.AddTo(ref list);})*
+;
+w_switch_case returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("SwitchCase", st, _member("Value", Value), _member("Body", Body));}
+:CaseKeyword Value=expression ColonToken Body=w_statement? BreakKeyword SemicolonToken
+;
+w_switch_default returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("SwitchDefault", st, _member("Body", Body));}
+:DefaultKeyword ColonToken Body=w_statement? BreakKeyword SemicolonToken
+;
+w_throw returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Throw", st, _member("Keyword", Keyword), _member("Exception", Exception));}
+:Keyword=ThrowKeyword Exception=expression? SemicolonToken
+;
+w_try returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Try", st, _member("Body", Body), _member("Catches", Catches), _member("Finally", Finally));}
+:TryKeyword Body=w_sequence (Catches=w_catches Finally=w_finally? | Finally=w_finally)
+;
+w_catches returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_catch {i.AddTo(ref list);})+
+;
+w_catch returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Catch", st, _member("Type", Type), _member("Name", Name), _member("Body", Body));}
+:CatchKeyword OpenParenToken Type=type Name=IdentifierToken CloseParenToken Body=w_sequence
+;
+w_finally returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Finally", st, _member("Body", Body));}
+:FinallyKeyword Body=w_sequence
+;
+w_foreach returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ForEach", st, _member("Type", Type), _member("Name", Name), _member("Values", Values), _member("Body", Body));}
+:ForEachKeyword OpenParenToken Type=type Name=IdentifierToken InKeyword Values=expression CloseParenToken Body=w_statement
+;
+w_parallel_foreach returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ParallelForEach", st, _member("Type", Type), _member("Name", Name), _member("Values", Values), _member("Body", Body), _member("Condition", Condition));}
+:PForEachKeyword OpenParenToken Type=type Name=IdentifierToken InKeyword Values=expression CloseParenToken Body=w_statement
+    (cUntilKeyword Condition=expression SemicolonToken)?
+;
+w_delay returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Delay", st, _member("Duration", Duration));}
+:DelayKeyword Duration=expression SemicolonToken
+;
+w_parallel returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Parallel", st, _member("Variables", Variables), _member("Members", Members), _member("Condition", Condition));}
+:ParallelKeyword OpenBraceToken Variables=w_variables Members=w_statements CloseBraceToken (cUntilKeyword Condition=expression SemicolonToken)? 
+;
+w_pick returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Pick", st, _member("Branches", Branches));}
+:PickKeyword OpenBraceToken Branches=w_pick_branches CloseBraceToken
+;
+w_pick_branches returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_pick_branch {i.AddTo(ref list);})*
+;
+w_pick_branch returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("PickBranch", st, _member("Variables", Variables), _member("Trigger", Trigger), _member("Action", Action));}
+:cOnKeyword Trigger=w_statement (DoKeyword Action=w_statement)?
+|OpenBraceToken Variables=w_variables cOnKeyword Trigger=w_statement (DoKeyword Action=w_statement)? CloseBraceToken
+;
+//
+w_state_machine returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("StateMachine", st, _member("Keyword", Keyword), _member("StartNodeName", StartNodeName), _member("Variables", Variables), _member("Nodes", Nodes));}
+:Keyword=StateMachineKeyword (GotoKeyword StartNodeName=IdentifierToken)? OpenBraceToken Variables=w_variables Nodes=w_sm_nodes CloseBraceToken
+;
+w_sm_nodes returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_sm_node {i.AddTo(ref list);})+
+;
+w_sm_node returns[Node nd]
+@after{nd = i;}
+:i=w_sm_common_node
+|i=w_sm_final_node
+;
+w_sm_final_node returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FinalNode", st, _member("Name", Name), _member("Variables", (Node)null), _member("Entry", Entry));}
+:Name=IdentifierToken ColonToken BreakKeyword (SemicolonToken | TildeGreaterThanToken Entry=w_statement)
+;
+w_sm_common_node returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("CommonNode", st, _member("Name", Name), _member("Variables", Variables), _member("Entry", Entry), _member("Exit", Exit), _member("Transitions", Transitions));}
+:Name=IdentifierToken ColonToken
+(OpenBraceToken Variables=w_variables (TildeGreaterThanToken Entry=w_statement)? (LessThanTildeToken Exit=w_statement)? Transitions=w_sm_transitions CloseBraceToken
+|(TildeGreaterThanToken Entry=w_statement)? (LessThanTildeToken Exit=w_statement)? Transitions=w_sm_transitions
+)
+;
+w_sm_transitions returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_sm_transition {i.AddTo(ref list);})+
+;
+w_sm_transition returns[Node nd]
+@after{nd = i;}
+:i=w_sm_transition_with_trigger
+|i=w_sm_transition_body
+;
+w_sm_transition_with_trigger returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("TransitionWithTrigger", st, _member("Trigger", Trigger), _member("Bodies", Bodies), _member("Body", Body));}
+:cOnKeyword Trigger=w_statement (OpenBraceToken Bodies=w_sm_transition_bodies CloseBraceToken | Body=w_sm_transition_body)
+;
+w_sm_transition_bodies returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_sm_transition_body {i.AddTo(ref list);})+
+;
+w_sm_transition_body returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("TransitionBody", st, _member("Condition", Condition), _member("Action", Action), _member("NodeName", NodeName));}
+:(IfKeyword OpenParenToken Condition=expression CloseParenToken)? (DoKeyword Action=w_statement)? GotoKeyword NodeName=IdentifierToken SemicolonToken
+;
+//
+w_flow returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Flow", st, _member("StartNodeName", StartNodeName), _member("Variables", Variables), _member("Nodes", Nodes));}
+:FlowKeyword (GotoKeyword StartNodeName=IdentifierToken)? OpenBraceToken Variables=w_variables Nodes=w_flow_nodes CloseBraceToken
+;
+w_flow_nodes returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_flow_node{i.AddTo(ref list);})+
+;
+w_flow_node returns[Node nd]
+@after{nd = i;}
+:i=w_flow_step
+|i=w_flow_if
+|i=w_flow_switch
+;
+w_flow_step returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowStep", st, _member("Name", Name), _member("Action", Action), _member("Jump", Jump));}
+:Name=IdentifierToken ColonToken Action=w_statement Jump=w_flow_jump
+;
+w_flow_if returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowIf", st,  _member("Name", Name), _member("Condition", Condition), _member("ThenJump", ThenJump), _member("ElseJump", ElseJump));}
+:Name=IdentifierToken ColonToken FIfKeyword OpenParenToken Condition=expression CloseParenToken ThenJump=w_flow_jump (ElseKeyword ElseJump=w_flow_jump)?
+;
+w_flow_switch returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowSwitch", st,  _member("Name", Name), _member("Value", Value), _member("Cases", Cases), _member("Default", Default));}
+:Name=IdentifierToken ColonToken FSwitchKeyword OpenParenToken Value=expression CloseParenToken OpenBraceToken Cases=w_flow_switch_cases Default=w_flow_switch_default? CloseBraceToken
+;
+w_flow_switch_cases returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:(i=w_flow_switch_case {i.AddTo(ref list);})*
+;
+w_flow_switch_case returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowSwitchCase", st, _member("Value", Value), _member("Jump", Jump));}
+:CaseKeyword Value=expression ColonToken Jump=w_flow_jump
+;
+w_flow_switch_default returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowSwitchDefault", st, _member("Jump", Jump));}
+:DefaultKeyword ColonToken Jump=w_flow_jump
+;
+w_flow_jump returns[Node nd]
+@after{nd = i;}
+:i=w_flow_goto
+|i=w_flow_break
+;
+w_flow_goto returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowGoto", st, _member("Name", Name));}
+:GotoKeyword Name=IdentifierToken SemicolonToken
+;
+w_flow_break returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("FlowBreak", st, _member("Keyword", Keyword));}
+:Keyword=BreakKeyword SemicolonToken
+;
+//
+w_transacted returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Transacted", st, _member("Body", Body), _member("Timeout", Timeout), _member("Initializer", Initializer));}
+:TransactedKeyword Body=w_sequence ((cTimeoutKeyword Timeout=expression (cInitKeyword Initializer=expression)? | cInitKeyword Initializer=expression) SemicolonToken)?
+;
+w_cancellable returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Cancellable", st, _member("Body", Body), _member("Handler", Handler));}
+:CancellableKeyword Body=w_sequence cCancelKeyword Handler=w_sequence 
+;
+w_compensable returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Compensable", st, _member("NameExplicit", NameExplicit), _member("Name", Name), _member("Body", Body),
+    _member("ConfirmHandler", ConfirmHandler), _member("CompensateHandler", CompensateHandler), _member("CancelHandler", CancelHandler));}
+:CompensableKeyword (NameExplicit=ExplicitKeyword? Name=IdentifierToken)? Body=w_sequence 
+    (ConfirmKeyword ConfirmHandler=w_sequence)? (CompensateKeyword CompensateHandler=w_sequence)? (cCancelKeyword CancelHandler=w_sequence)? 
+;
+w_confirm returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Confirm", st, _member("Target", Target));}
+:ConfirmKeyword Target=expression? SemicolonToken
+;
+w_compensate returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Compensate", st, _member("Target", Target));}
+:CompensateKeyword Target=expression? SemicolonToken
+;
+w_persist returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Persist", st, _member("Keyword", Keyword));}
+:Keyword=PersistKeyword SemicolonToken
+;
+w_no_persist returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("NoPersist", st, _member("Body", Body));}
+:NoPersistKeyword Body=w_sequence
+;
+w_terminate returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Terminate", st, _member("Reason", Reason), _member("Exception", Exception));}
+:TerminateKeyword (ForKeyword Reason=expression (ThrowKeyword Exception=expression)? | ThrowKeyword Exception=expression) SemicolonToken
+;
+//
+//
+w_receive returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Receive", st, _member("Keyword", Keyword), _member("ContractName", ContractName), _member("Name", Name), _member("Content", Content),
+    _member("RequestCorrName", RequestCorrName),
+    _member("CallbackCorrName", CallbackCorrName), _member("CallbackCorrHandle", CallbackCorrHandle),
+    _member("RefContextCorrHandle", RefContextCorrHandle),
+    _member("RefCallbackCorrHandle", RefCallbackCorrHandle),
+    _member("RefContentCorrHandle", RefContentCorrHandle), _member("RefContentCorrMsgQrySet", RefContentCorrMsgQrySet),
+    _member("Initializer", Initializer));}
+:Keyword=ReceiveKeyword OpenBraceToken ContractName=expression CommaToken Name=expression CloseBraceToken Content=w_receive_content
+    (cRequestCorrKeyword RequestCorrName=IdentifierToken)?
+    (cCallbackCorrKeyword (CallbackCorrName=IdentifierToken | ExplicitKeyword CallbackCorrHandle=expression))?
+    (RefKeyword (cContextCorrKeyword RefContextCorrHandle=expression
+        | cCallbackCorrKeyword RefCallbackCorrHandle=expression
+        | ContentCorrKeyword RefContentCorrHandle=expression cOnKeyword RefContentCorrMsgQrySet=expression))?
+    (cInitKeyword Initializer=expression)? SemicolonToken
+;
+w_send returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("Send", st, _member("Keyword", Keyword), _member("ContractName", ContractName), _member("Name", Name), _member("Content", Content),
+    _member("RequestCorrName", RequestCorrName),
+    _member("CallbackCorrName", CallbackCorrName), _member("CallbackCorrHandle", CallbackCorrHandle),
+    _member("RefContextCorrHandle", RefContextCorrHandle),
+    _member("RefCallbackCorrHandle", RefCallbackCorrHandle),    
+    _member("EndpointAddress", EndpointAddress),
+    _member("Initializer", Initializer));}
+:Keyword=SendKeyword OpenBraceToken ContractName=expression CommaToken Name=expression CloseBraceToken Content=w_send_content
+    (cRequestCorrKeyword RequestCorrName=IdentifierToken)?
+    (cCallbackCorrKeyword (CallbackCorrName=IdentifierToken | ExplicitKeyword CallbackCorrHandle=expression))?
+    (RefKeyword (cContextCorrKeyword RefContextCorrHandle=expression | cCallbackCorrKeyword RefCallbackCorrHandle=expression))?
+    (cEndpointAddressKeyword EndpointAddress=expression)?
+    (cInitKeyword Initializer=expression)? SemicolonToken
+;
+//
+w_send_reply returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("SendReply", st, _member("Keyword", Keyword), _member("Content", Content),
+    _member("ContextCorrName", ContextCorrName), _member("ContextCorrHandle", ContextCorrHandle),
+    _member("ContentCorrName", ContentCorrName), _member("ContentCorrHandle", ContentCorrHandle), _member("ContentCorrMsgQrySet", ContentCorrMsgQrySet),
+    _member("RefRequestCorrName", RefRequestCorrName),
+    _member("Initializer", Initializer));}
+:Keyword=SendReplyKeyword Content=w_send_content
+    (cContextCorrKeyword (ContextCorrName=IdentifierToken | ExplicitKeyword ContextCorrHandle=expression))?
+    (ContentCorrKeyword (ContentCorrName=IdentifierToken | ExplicitKeyword ContentCorrHandle=expression) cOnKeyword ContentCorrMsgQrySet=expression)?
+    (RefKeyword cRequestCorrKeyword RefRequestCorrName=IdentifierToken)?
+    (cInitKeyword Initializer=expression)? SemicolonToken
+;
+w_receive_reply returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ReceiveReply", st, _member("Keyword", Keyword), _member("Content", Content),
+    _member("ContextCorrName", ContextCorrName), _member("ContextCorrHandle", ContextCorrHandle),
+    _member("RefRequestCorrName", RefRequestCorrName),
+    _member("Initializer", Initializer));}
+:Keyword=ReceiveReplyKeyword Content=w_receive_content
+    (cContextCorrKeyword (ContextCorrName=IdentifierToken | ExplicitKeyword ContextCorrHandle=expression))?
+    (RefKeyword cRequestCorrKeyword RefRequestCorrName=IdentifierToken)?
+    (cInitKeyword Initializer=expression)? SemicolonToken
+;
+//
+w_receive_content returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ReceiveContent", st, _member("Parameters", Parameters), _member("StoreName", StoreName));}
+:OpenParenToken (Parameters=w_receive_parameters | TildeGreaterThanToken StoreName=IdentifierToken)? CloseParenToken
+;
+w_receive_parameters returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=w_receive_parameter{i.AddTo(ref list);} (CommaToken i=w_receive_parameter{list.Add(i);})*
+;
+w_receive_parameter returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ReceiveParameter", st, _member("Name", Name), _member("StoreName", StoreName));}
+:Name=expression TildeGreaterThanToken StoreName=IdentifierToken
+;
+w_send_content returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("SendContent", st, _member("Parameters", Parameters), _member("Value", Value));}
+:OpenParenToken (Parameters=w_send_parameters | LessThanTildeToken Value=expression)? CloseParenToken
+;
+w_send_parameters returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=w_send_parameter{i.AddTo(ref list);} (CommaToken i=w_send_parameter{list.Add(i);})*
+;
+w_send_parameter returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("SendParameter", st, _member("Name", Name), _member("Value", Value));}
+:Name=expression LessThanTildeToken Value=expression
+;
+//
+w_content_corr returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ContentCorr", st,
+    _member("ContentCorrName", ContentCorrName), _member("ContentCorrHandle", ContentCorrHandle),
+    _member("DataList", DataList));}
+:ContentCorrKeyword (ContentCorrName=IdentifierToken | ExplicitKeyword ContentCorrHandle=expression) cOnKeyword
+    DataList=w_content_corr_data_list //SemicolonToken
+;
+w_content_corr_data_list returns[Node nd]
+@init{var st = _start(); NodeList list = null;}
+@after{nd = _list(st, list);}
+:i=w_content_corr_data{i.AddTo(ref list);} (CommaToken i=w_content_corr_data{list.Add(i);})*
+;
+w_content_corr_data returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("ContentCorrData", st, _member("Key", Key), _member("Value", Value));}
+:OpenBraceToken Key=expression CommaToken Value=expression CloseBraceToken
+;
+//
+w_transacted_receive returns[Node nd]
+@init{var st = _start();}
+@after{nd = _struct("TransactedReceive", st, _member("Body", Body));}
+:TransactedReceiveKeyword Body=w_sequence
+;
+
+//
+//W contextual keywords
+//
+cCallbackCorrKeyword returns[Node nd]:{input.LT(1).Text=="callbackcorr"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.CallbackCorrKeywordKind, label: NodeExtensions.WTokenLabel);};
+cCancelKeyword returns[Node nd]:{input.LT(1).Text=="cancel"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.CancelKeywordKind, label: NodeExtensions.WTokenLabel);};
+cContextCorrKeyword returns[Node nd]:{input.LT(1).Text=="contextcorr"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.ContextCorrKeywordKind, label: NodeExtensions.WTokenLabel);};
+cEndpointAddressKeyword returns[Node nd]:{input.LT(1).Text=="endpointaddress"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.EndpointAddressKeywordKind, label: NodeExtensions.WTokenLabel);};
+cInitKeyword returns[Node nd]:{input.LT(1).Text=="init"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.InitKeywordKind, label: NodeExtensions.WTokenLabel);};
+cRequestCorrKeyword returns[Node nd]:{input.LT(1).Text=="requestcorr"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.RequestCorrKeywordKind, label: NodeExtensions.WTokenLabel);};
+cTimeoutKeyword returns[Node nd]:{input.LT(1).Text=="timeout"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.TimeoutKeywordKind, label: NodeExtensions.WTokenLabel);};
+cUntilKeyword returns[Node nd]:{input.LT(1).Text=="until"}? t=IdentifierToken{nd = t.CloneNode(kindNode: WTokens.UntilKeywordKind, label: NodeExtensions.WTokenLabel);};
+
+//
+//C# contextual keywords
+//
+cYieldKeyword returns[Node nd]:{input.LT(1).Text=="yield"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.YieldKeywordKind);};
+cPartialKeyword returns[Node nd]:{input.LT(1).Text=="partial"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.PartialKeywordKind);};
+cAliasKeyword returns[Node nd]:{input.LT(1).Text=="alias"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.AliasKeywordKind);};
+cGlobalKeyword returns[Node nd]:{input.LT(1).Text=="global"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.GlobalKeywordKind);};
+cAssemblyKeyword returns[Node nd]:{input.LT(1).Text=="assembly"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.AssemblyKeywordKind);};
+cModuleKeyword returns[Node nd]:{input.LT(1).Text=="module"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.ModuleKeywordKind);};
+cTypeKeyword returns[Node nd]:{input.LT(1).Text=="type"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.TypeKeywordKind);};
+cFieldKeyword returns[Node nd]:{input.LT(1).Text=="field"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.FieldKeywordKind);};
+cMethodKeyword returns[Node nd]:{input.LT(1).Text=="method"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.MethodKeywordKind);};
+cParamKeyword returns[Node nd]:{input.LT(1).Text=="param"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.ParamKeywordKind);};
+cPropertyKeyword returns[Node nd]:{input.LT(1).Text=="property"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.PropertyKeywordKind);};
+cTypeVarKeyword returns[Node nd]:{input.LT(1).Text=="typevar"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.TypeVarKeywordKind);};
+cGetKeyword returns[Node nd]:{input.LT(1).Text=="get"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.GetKeywordKind);};
+cSetKeyword returns[Node nd]:{input.LT(1).Text=="set"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.SetKeywordKind);};
+cAddKeyword returns[Node nd]:{input.LT(1).Text=="add"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.AddKeywordKind);};
+cRemoveKeyword returns[Node nd]:{input.LT(1).Text=="remove"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.RemoveKeywordKind);};
+cWhereKeyword returns[Node nd]:{input.LT(1).Text=="where"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.WhereKeywordKind);};
+cFromKeyword returns[Node nd]:{input.LT(1).Text=="from"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.FromKeywordKind);};
+cGroupKeyword returns[Node nd]:{input.LT(1).Text=="group"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.GroupKeywordKind);};
+cJoinKeyword returns[Node nd]:{input.LT(1).Text=="join"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.JoinKeywordKind);};
+cIntoKeyword returns[Node nd]:{input.LT(1).Text=="into"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.IntoKeywordKind);};
+cLetKeyword returns[Node nd]:{input.LT(1).Text=="let"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.LetKeywordKind);};
+cByKeyword returns[Node nd]:{input.LT(1).Text=="by"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.ByKeywordKind);};
+cSelectKeyword returns[Node nd]:{input.LT(1).Text=="select"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.SelectKeywordKind);};
+cOrderByKeyword returns[Node nd]:{input.LT(1).Text=="orderby"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.OrderByKeywordKind);};
+cOnKeyword returns[Node nd]:{input.LT(1).Text=="on"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.OnKeywordKind);};
+cEqualsKeyword returns[Node nd]:{input.LT(1).Text=="equals"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.EqualsKeywordKind);};
+cAscendingKeyword returns[Node nd]:{input.LT(1).Text=="ascending"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.AscendingKeywordKind);};
+cDescendingKeyword returns[Node nd]:{input.LT(1).Text=="descending"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.DescendingKeywordKind);};
+cAsyncKeyword returns[Node nd]:{input.LT(1).Text=="async"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.AsyncKeywordKind);};
+cAwaitKeyword returns[Node nd]:{input.LT(1).Text=="await"}? t=IdentifierToken{nd = t.CloneNode(CSTokens.AwaitKeywordKind);};
+
+//
+//W reserved keywords
+//
+ActivityKeyword: 'activity';
+CancellableKeyword: 'cancellable';
+ConfirmKeyword: 'confirm';
+CompensableKeyword: 'compensable';
+CompensateKeyword: 'compensate';
+ContentCorrKeyword: 'contentcorr';
+DelayKeyword: 'delay';
+FlowKeyword: 'flow';
+FIfKeyword: 'fif';
+FSwitchKeyword: 'fswitch';
+ImportKeyword: 'import';
+NoPersistKeyword: 'nopersist';
+ParallelKeyword: 'parallel';
+PersistKeyword: 'persist';
+PForEachKeyword: 'pforeach';
+PickKeyword: 'pick';
+ReceiveKeyword: 'receive';
+ReceiveReplyKeyword: 'receivereply';
+SendKeyword: 'send';
+SendReplyKeyword: 'sendreply';
+StateMachineKeyword: 'statemachine';
+TerminateKeyword: 'terminate';
+TransactedKeyword: 'transacted';
+TransactedReceiveKeyword: 'transactedreceive';
+HashHashToken: '##';
+TildeGreaterThanToken: '~>';
+LessThanTildeToken: '<~';
+
+//
+//C# tokens
+//
+TildeToken: '~';
+ExclamationToken: '!';
+DollarToken: '$';
+PercentToken: '%';
+CaretToken: '^';
+AmpersandToken: '&';
+AsteriskToken: '*';
+OpenParenToken: '(';
+CloseParenToken: ')';
+MinusToken: '-';
+PlusToken: '+';
+EqualsToken: '=';
+OpenBraceToken: '{';
+CloseBraceToken: '}';
+OpenBracketToken: '[';
+CloseBracketToken: ']';
+BarToken: '|';
+BackslashToken: '\\';
+ColonToken: ':';
+SemicolonToken: ';';
+DoubleQuoteToken: '"';
+SingleQuoteToken: '\'';
+LessThanToken: '<';
+CommaToken: ',';
+GreaterThanToken: '>';
+DotToken: '.';
+QuestionToken: '?';
+HashToken: '#';
+SlashToken: '/';
+//SlashGreaterThanToken: '/>';
+//LessThanSlashToken: '</';
+//XmlCommentStartToken: '<!--';
+//XmlCommentEndToken: '-->';
+//XmlCDataStartToken: '<![CDATA[';
+//XmlCDataEndToken: ']]>';
+//XmlProcessingInstructionStartToken: '<?';
+//XmlProcessingInstructionEndToken: '?>';
+BarBarToken: '||';
+AmpersandAmpersandToken: '&&';
+MinusMinusToken: '--';
+PlusPlusToken: '++';
+ColonColonToken: '::';
+QuestionQuestionToken: '??';
+MinusGreaterThanToken: '->';
+ExclamationEqualsToken: '!=';
+EqualsEqualsToken: '==';
+EqualsGreaterThanToken: '=>';
+LessThanEqualsToken: '<=';
+LessThanLessThanToken: '<<';
+LessThanLessThanEqualsToken: '<<=';
+GreaterThanEqualsToken: '>=';
+//GreaterThanGreaterThanToken: '>>';
+//GreaterThanGreaterThanEqualsToken: '>>=';
+SlashEqualsToken: '/=';
+AsteriskEqualsToken: '*=';
+BarEqualsToken: '|=';
+AmpersandEqualsToken: '&=';
+PlusEqualsToken: '+=';
+MinusEqualsToken: '-=';
+CaretEqualsToken: '^=';
+PercentEqualsToken: '%=';
+//
+//C# reserved keywords
+//
+BoolKeyword: 'bool';
+ByteKeyword: 'byte';
+SByteKeyword: 'sbyte';
+ShortKeyword: 'short';
+UShortKeyword: 'ushort';
+IntKeyword: 'int';
+UIntKeyword: 'uint';
+LongKeyword: 'long';
+ULongKeyword: 'ulong';
+DoubleKeyword: 'double';
+FloatKeyword: 'float';
+DecimalKeyword: 'decimal';
+StringKeyword: 'string';
+CharKeyword: 'char';
+VoidKeyword: 'void';
+ObjectKeyword: 'object';
+TypeOfKeyword: 'typeof';
+SizeOfKeyword: 'sizeof';
+NullKeyword: 'null';
+TrueKeyword: 'true';
+FalseKeyword: 'false';
+IfKeyword: 'if';
+ElseKeyword: 'else';
+WhileKeyword: 'while';
+ForKeyword: 'for';
+ForEachKeyword: 'foreach';
+DoKeyword: 'do';
+SwitchKeyword: 'switch';
+CaseKeyword: 'case';
+DefaultKeyword: 'default';
+TryKeyword: 'try';
+CatchKeyword: 'catch';
+FinallyKeyword: 'finally';
+LockKeyword: 'lock';
+GotoKeyword: 'goto';
+BreakKeyword: 'break';
+ContinueKeyword: 'continue';
+ReturnKeyword: 'return';
+ThrowKeyword: 'throw';
+PublicKeyword: 'public';
+PrivateKeyword: 'private';
+InternalKeyword: 'internal';
+ProtectedKeyword: 'protected';
+StaticKeyword: 'static';
+ReadOnlyKeyword: 'readonly';
+SealedKeyword: 'sealed';
+ConstKeyword: 'const';
+FixedKeyword: 'fixed';
+StackAllocKeyword: 'stackalloc';
+VolatileKeyword: 'volatile';
+NewKeyword: 'new';
+OverrideKeyword: 'override';
+AbstractKeyword: 'abstract';
+VirtualKeyword: 'virtual';
+EventKeyword: 'event';
+ExternKeyword: 'extern';
+RefKeyword: 'ref';
+OutKeyword: 'out';
+InKeyword: 'in';
+IsKeyword: 'is';
+AsKeyword: 'as';
+ParamsKeyword: 'params';
+ArgListKeyword: '__arglist';
+MakeRefKeyword: '__makeref';
+RefTypeKeyword: '__reftype';
+RefValueKeyword: '__refvalue';
+ThisKeyword: 'this';
+BaseKeyword: 'base';
+NamespaceKeyword: 'namespace';
+UsingKeyword: 'using';
+ClassKeyword: 'class';
+StructKeyword: 'struct';
+InterfaceKeyword: 'interface';
+EnumKeyword: 'enum';
+DelegateKeyword: 'delegate';
+CheckedKeyword: 'checked';
+UncheckedKeyword: 'unchecked';
+UnsafeKeyword: 'unsafe';
+OperatorKeyword: 'operator';
+ExplicitKeyword: 'explicit';
+ImplicitKeyword: 'implicit';
+
+//
+//C# tokens
+//
+IdentifierToken: '@'? (LetterCharacter | '_') (LetterCharacter | DecimalDigit | '_')*;
+fragment LetterCharacter: 'a'..'z' | 'A'..'Z';
+/*
+//unicode...
+IdentifierToken: '@'? IdentifierStartCharacter IdentifierPartCharacter*;
+fragment IdentifierStartCharacter 
+  : LetterCharacter
+  | '_'
+  ;
+fragment IdentifierPartCharacter 
+  : LetterCharacter
+  | DecimalDigitCharacter
+  | ConnectingCharacter
+  | CombiningCharacter
+  | FormattingCharacter
+  ;
+//Unicode_escape_sequence??
+fragment LetterCharacter 
+  : UNICODE_CLASS_LU
+  | UNICODE_CLASS_LL
+  | UNICODE_CLASS_LT
+  | UNICODE_CLASS_LM
+  | UNICODE_CLASS_LO
+  | UNICODE_CLASS_NL
+  ;
+fragment CombiningCharacter 
+  : UNICODE_CLASS_MN
+  | UNICODE_CLASS_MC
+  ;
+fragment DecimalDigitCharacter 
+  : UNICODE_CLASS_ND
+  ;
+fragment ConnectingCharacter 
+  : UNICODE_CLASS_PC
+  ;
+fragment FormattingCharacter 
+  : UNICODE_CLASS_CF
+  ;
+*/
+//
+//
+fragment DecimalDigit: '0'..'9';
+fragment DecimalDigits: DecimalDigit+;
+fragment HexDigit: DecimalDigit | 'a'..'f' | 'A'..'F';
+fragment HexDigits: HexDigit+;
+//
+NumericLiteralToken
+:IntegerLiteralToken
+|RealLiteralToken
+;
+fragment IntegerLiteralToken
+:DecimalDigits IntegerTypeSuffix?
+|('0x'|'0X') HexDigits IntegerTypeSuffix?
+;
+fragment IntegerTypeSuffix: 'U' | 'u' | 'L' | 'l' | 'UL' | 'Ul' | 'uL' | 'ul' | 'LU' | 'lU' | 'Lu' | 'lu';
+fragment RealLiteralToken
+:DecimalDigits '.' DecimalDigits ExponentPart? RealTypeSuffix?
+|'.' DecimalDigits ExponentPart? RealTypeSuffix?
+|DecimalDigits ExponentPart RealTypeSuffix?
+|DecimalDigits RealTypeSuffix
+;
+fragment ExponentPart: ('E' | 'e') ('+' | '-')? DecimalDigits;
+fragment RealTypeSuffix: 'F' | 'f' | 'D' | 'd' | 'M' | 'm';
+//eg: 0.ToString()
+IntegerLiteralMemberAccess
+@after{
+	dd.Type = NumericLiteralToken;
+	EmitCore(dd, true);
+	dt.Type = DotToken;
+	EmitCore(dt, true);
+	it.Type = IdentifierToken;
+	EmitCore(it, true);
+}
+:dd=DecimalDigits dt=DotToken it=IdentifierToken
+;
+/*
+//eg: 2..5
+IntegerLiteralDotDot
+@after{
+	dd.Type = NumericLiteralToken;
+	EmitCore(dd, true);
+	ddt.Type = DotDotToken;
+	EmitCore(ddt, true);
+}
+:dd=DecimalDigits ddt=DotDotToken
+;
+*/
+//
+CharacterLiteralToken 
+:'\'' (~('\'' | '\\' | NewLineCharacter) | CharacterEscape) '\''
+;
+StringLiteralToken
+: '"' (~('"' | '\\' | NewLineCharacter) | CharacterEscape)* '"'
+| '@"' (~'"' | '""' )* '"'
+;
+fragment CharacterEscape
+: '\\' ('\'' | '"' | '\\' | '0' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v')
+| '\\x' HexDigit
+| '\\x' HexDigit HexDigit
+| '\\x' HexDigit HexDigit HexDigit
+| ('\\x' | '\\u') HexDigit HexDigit HexDigit HexDigit
+| '\\U' HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
+;
+//
+SingleLineComment :'//' (~NewLineCharacter)* {Skip();};
+DelimitedComment : '/*' (options{greedy=false;}: .)*  '*/' {Skip();};
+fragment NewLineCharacter
+: '\u000D' // Carriage Return \r
+| '\u000A' // Line Feed \n
+| '\u0085' // Next Line
+| '\u2028' // Line Separator
+| '\u2029' // Paragraph Separator
+;
+NewLine: NewLineCharacter+ {Skip();};
+fragment WhitespaceCharacter
+: '\u0020'//UNICODE_CLASS_ZS
+| '\u0009' // Horizontal Tab \t
+| '\u000B' // Vertical Tab \v
+| '\u000C' // Form Feed \f
+;
+Whitespace: WhitespaceCharacter+ {Skip();};
+
+//
+//todo:检查pp在单独一行，'#'前只有零或多个whitespace
+//todo:check #define #undef occurs before the first token
+//todo:symbol maybe keyword
+//
+fragment PpHead
+:'#' WhitespaceCharacter*
+;
+//todo: how to match EOF?
+fragment PpTail
+:WhitespaceCharacter* //('//' (~NewLineCharacter)*)? NewLineCharacter+
+;
+fragment PpMessage
+://NewLineCharacter+
+|WhitespaceCharacter (~NewLineCharacter)* //NewLineCharacter+
+;
+PpRegion
+:PpHead 'region' PpMessage {
+	SetPpRegion(true, 0, 0, 0);
+	Skip();
+};
+PpEndRegion
+:PpHead {var tokenIndex=CharIndex;var tokenLine=Line;var tokenCol=CharPositionInLine;} 'endregion' PpMessage {
+	SetPpRegion(false,tokenIndex, tokenLine, tokenCol);
+	Skip();
+};
+PpDefine
+:PpHead 'define' WhitespaceCharacter+ symbol=IdentifierToken PpTail{
+	AddPpSymbol(symbol.Text);
+	Skip();
+};
+PpUnDefine
+:PpHead 'undef' WhitespaceCharacter+ symbol=IdentifierToken PpTail{
+	RemovePpSymbol(symbol.Text);
+	Skip();
+};
+PpIf
+:PpHead 'if' WhitespaceCharacter+ PpExpression PpTail{
+	SetPpCondition(PpConditionKind.If, GetPpExpression(), 0, 0, 0);
+	Skip();
+};
+PpElif
+:PpHead {var tokenIndex=CharIndex;var tokenLine=Line;var tokenCol=CharPositionInLine;} 'elif' WhitespaceCharacter+ PpExpression PpTail{
+	SetPpCondition(PpConditionKind.Elif, GetPpExpression(), tokenIndex, tokenLine, tokenCol);
+	Skip();
+};
+PpElse
+:PpHead {var tokenIndex=CharIndex;var tokenLine=Line;var tokenCol=CharPositionInLine;} 'else' PpTail{
+	SetPpCondition(PpConditionKind.Else, false, tokenIndex, tokenLine, tokenCol);
+	Skip();
+};
+PpEndif
+:PpHead {var tokenIndex=CharIndex;var tokenLine=Line;var tokenCol=CharPositionInLine;} 'endif' PpTail{
+	SetPpCondition(PpConditionKind.Endif, false, tokenIndex, tokenLine, tokenCol);
+	Skip();
+};
+fragment PpExpression
+:PpAndExpression WhitespaceCharacter* ('||' WhitespaceCharacter* PpAndExpression {SetPpExpression(PpExpressionKind.Or);})*
+;
+fragment PpAndExpression
+:PpEqualityExpression WhitespaceCharacter* ('&&' WhitespaceCharacter* PpEqualityExpression {SetPpExpression(PpExpressionKind.And);})*
+;
+fragment PpEqualityExpression
+:PpUnaryExpression WhitespaceCharacter* (
+	 '==' WhitespaceCharacter* PpUnaryExpression{SetPpExpression(PpExpressionKind.Equal);}
+	|'!=' WhitespaceCharacter* PpUnaryExpression{SetPpExpression(PpExpressionKind.NotEqual);})*
+;
+fragment PpUnaryExpression
+:PpPrimaryExpression
+|'!' WhitespaceCharacter* PpUnaryExpression{SetPpExpression(PpExpressionKind.Not);}
+;
+fragment PpPrimaryExpression
+:symbol=IdentifierToken{SetPpExpression(PpExpressionKind.Primary, symbol.Text);}
+|'(' WhitespaceCharacter* PpExpression WhitespaceCharacter* ')'
+;

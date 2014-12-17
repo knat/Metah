@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--FirstLook.xsd-->
+<schema targetNamespace="http://schemas.example.com/projecta" elementFormDefault="qualified"
+    xmlns:tns="http://schemas.example.com/projecta" xmlns="http://www.w3.org/2001/XMLSchema">
+    <simpleType name="String10">
+        <restriction base="string">
+            <minLength value="1"></minLength>
+            <maxLength value="10"></maxLength>
+        </restriction>
+    </simpleType>
+    <simpleType name="String20">
+        <restriction base="string">
+            <minLength value="1"></minLength>
+            <maxLength value="20"></maxLength>
+        </restriction>
+    </simpleType>
+    <simpleType name="String40">
+        <restriction base="string">
+            <minLength value="1"></minLength>
+            <maxLength value="40"></maxLength>
+        </restriction>
+    </simpleType>
+    <simpleType name="Int32List">
+        <list itemType="int"></list>
+    </simpleType>
+    <simpleType name="Email">
+        <restriction base="tns:String40">
+            <pattern value="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}"></pattern>
+        </restriction>
+    </simpleType>
+    <complexType name="Phone">
+        <simpleContent>
+            <extension base="tns:String20">
+                <attribute name="PhoneType" use="optional" default="Unknown" type="tns:PhoneType"></attribute>
+            </extension>
+        </simpleContent>
+    </complexType>
+    <simpleType name="PhoneType">
+        <restriction base="string">
+            <enumeration value="Unknown"></enumeration>
+            <enumeration value="Work"></enumeration>
+            <enumeration value="Home"></enumeration>
+        </restriction>
+    </simpleType>
+    <complexType name="Phones">
+        <sequence>
+            <element name="Phone" minOccurs="1" maxOccurs="unbounded" type="tns:Phone"></element>
+        </sequence>
+    </complexType>
+    <complexType name="Address">
+        <choice>
+            <element name="Normal" type="tns:NormalAddress"></element>
+            <element name="Geography" type="tns:GeographyAddress"></element>
+        </choice>
+    </complexType>
+    <complexType name="NormalAddress">
+        <attribute name="Country" use="required" type="tns:String20"></attribute>
+        <attribute name="State" use="optional" type="tns:String20"></attribute>
+        <attribute name="City" use="required" type="tns:String20"></attribute>
+        <attribute name="Address" use="required" type="tns:String40"></attribute>
+        <attribute name="ZipCode" use="required" type="tns:String10"></attribute>
+    </complexType>
+    <complexType name="GeographyAddress">
+        <attribute name="Longitude" use="required" type="tns:SpatialNumber"></attribute>
+        <attribute name="Latitude" use="required" type="tns:SpatialNumber"></attribute>
+    </complexType>
+    <simpleType name="SpatialNumber">
+        <restriction base="decimal">
+            <totalDigits value="8"></totalDigits>
+            <fractionDigits value="5"></fractionDigits>
+        </restriction>
+    </simpleType>
+    <complexType name="Customer">
+        <sequence>
+            <element name="Phones" type="tns:Phones"></element>
+            <element name="Address" type="tns:Address"></element>
+        </sequence>
+        <attribute name="Id" use="optional" type="int"></attribute>
+        <attribute name="Name" use="required" type="tns:String10"></attribute>
+        <attribute name="Email" use="required" type="tns:Email"></attribute>
+        <attribute name="RegistrationDate" use="optional" type="dateTime"></attribute>
+        <attribute name="OrderIds" use="optional" type="tns:Int32List"></attribute>
+    </complexType>
+    <element name="Customer" type="tns:Customer"></element>
+</schema>

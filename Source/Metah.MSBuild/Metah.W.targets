@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Condition="'$(BuildingInsideVisualStudio)' == 'true'">
+    <AvailableItemName Include="MetahW" />
+  </ItemGroup>
+  <PropertyGroup>
+    <PrepareResourcesDependsOn>
+      MetahWCompilation;
+      $(PrepareResourcesDependsOn)
+    </PrepareResourcesDependsOn>
+  </PropertyGroup>
+  <UsingTask TaskName="Metah.MSBuild.W.MetahWBuilder" AssemblyFile="$(MSBuildThisFileDirectory)Metah.MSBuild.dll" />
+  <Target Name="MetahWCompilation">
+    <Message Text="======== Begin Metah.W Compilation ========" Importance="high" />
+    <MetahWBuilder
+      ProjectDirectory="$(MSBuildProjectDirectory)"
+      PreprocessorSymbols="$(DefineConstants)"
+      CSharpFiles="@(Compile)"
+      MetadataReferences="@(ReferencePath)"
+      WFiles="@(MetahW)"
+      >
+      <Output TaskParameter="OutputCSharpFiles" ItemName="Compile" />
+    </MetahWBuilder>
+    <Message Text="======== End Metah.W Compilation ========" Importance="high" />
+  </Target>
+</Project>

@@ -1,0 +1,49 @@
+﻿//ThirdLook.mxcs
+alias "http://schemas.example.com/projectc" as nsc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;//for XmlReader & XmlWriter
+using System.Xml.Linq;//for XName & XNamespace
+using X = Metah.X;
+using Metah.X.Extensions;
+
+xnamespace {nsc} [namespace: Example.ProjectC] {
+    type Phone
+        ##{
+            private Phone() { }
+            public Phone(string value, string phoneType = null) {
+                Value = value;
+                if (phoneType != null) EnsureAttributeSet().PhoneType_Value = phoneType;
+            }
+        }
+    ;
+    type Address
+        children{
+            choice { }
+            ##{
+                protected override bool TryValidating(X.Context context, bool fromValidate){
+                    //...
+                    return base.TryValidating(context, fromValidate);
+                }
+            }
+            ;
+        };
+        ##{
+            private Address() { }
+            public Address(string country, string state, string city, string address, string zipCode) {
+                //...
+            }
+            public Address(decimal longitude, decimal latitude) {
+                //...
+            }
+            public override string ToString() {
+                //...
+                return base.ToString();
+            }
+        }
+    ;
+    //...
+}

@@ -1,0 +1,601 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Activities;
+
+namespace CodeListings
+{
+class Program
+{
+    static void Main2()
+    {
+        Console.WriteLine("====NeedNotAssignValues()====");
+        WorkflowInvoker.Invoke(new NeedNotAssignValues());
+        Console.WriteLine("====WellknownStatements()====");
+        WorkflowInvoker.Invoke(new WellknownStatements());
+        Console.WriteLine("====InvokeActivitiesTest()====");
+        WorkflowInvoker.Invoke(new InvokeActivitiesTest());
+        Console.WriteLine("====ActivityDelegatesTest()====");
+        WorkflowInvoker.Invoke(new ActivityDelegatesTest());
+        Console.WriteLine("====Parallel()====");
+        WorkflowInvoker.Invoke(new Parallel());
+        Console.WriteLine("====Parallel2()====");
+        WorkflowInvoker.Invoke(new Parallel2());
+        Console.WriteLine("====ParallelForeach()====");
+        WorkflowInvoker.Invoke(new ParallelForeach());
+        Console.WriteLine("====ParallelForeach2()====");
+        WorkflowInvoker.Invoke(new ParallelForeach2());
+        Console.WriteLine("====Pick()====");
+        WorkflowInvoker.Invoke(new Pick());
+        Console.WriteLine("====StateMachine(false)====");
+        WorkflowInvoker.Invoke(new StateMachine());
+        Console.WriteLine("====FlowTest()====");
+        WorkflowInvoker.Invoke(new FlowTest());
+        Console.WriteLine("====Cancellable()====");
+        WorkflowInvoker.Invoke(new Cancellable());
+        Console.WriteLine("====Compensable(false)====");
+        WorkflowInvoker.Invoke(new Compensable());
+        Console.WriteLine("====Compensable2Test()====");
+        WorkflowInvoker.Invoke(new Compensable2Test());
+        
+    }
+}
+
+public class SomeAttribute1Attribute : Attribute { }
+public class SomeAttribute2Attribute : Attribute { }
+public interface ISomeInterface
+{
+    int Method();
+}
+public class SomeClass<T> where T : class, new() { }
+
+[SomeAttribute1]
+internal sealed activity A1<T>([RequiredArgument]int Arg1, [SomeAttribute2]out T Arg2, ref SomeClass<T> Arg3) as IEnumerable<T>
+    : ISomeInterface where T : class, new()
+{
+}
+##
+{
+    private int _i;
+    int ISomeInterface.Method() { return ++_i; }
+}
+
+public sealed partial activity A2<T>(int Arg1, T Arg2) : ISomeInterface
+{
+}
+partial class A2<T>
+{
+    private int _i;
+    int ISomeInterface.Method() { return ++_i; }
+}
+
+activity GetDateTime() as DateTime
+{
+    Result = DateTime.Now;
+}
+
+activity NeedNotAssignValues(out SomeClass<Exception> Arg1) as bool
+{
+    string s;
+    Console.WriteLine(Arg1 == default(SomeClass<Exception>));//True
+    Console.WriteLine(Result == default(bool));//True
+    Console.WriteLine(s == default(string));//True
+}
+
+activity WellknownStatements()
+{
+    try
+    {
+        foreach(int i in new[]{2,3,5,7,11,13,17})
+        {
+            Console.Write(i + ": ");
+            switch(i)
+            {
+                case 2:
+                    Console.WriteLine("even number");
+                    break;
+                case 7:
+                    Console.WriteLine("lucky number");
+                    break;
+                case 13:
+                    {
+                        Console.WriteLine("bad number");
+                        throw new ArgumentException("bad number 13");
+                    }
+                    break;
+                default:
+                    Console.WriteLine("normal number");
+                    break;
+            }
+            if(i == 2)
+            {
+                int j;
+                j = i;
+                while(j++ < 7);
+            }
+        }
+    }
+    catch(ArgumentException ex)
+    {
+        Console.WriteLine(ex);
+    }
+    catch(Exception ex)
+    {
+        throw;
+    }
+    finally
+    {
+        Console.WriteLine("finally");
+    }
+}
+
+activity CSharpBlock(int Arg1, string Arg2) as bool
+{
+    int i;
+    ##
+    {
+        if(Arg1 < 0) throw new ArgumentOutOfRangeException("Arg1");//They are C# statements
+        Result = int.TryParse(Arg2, out i);
+        var i2 = Arg1 + i;//It's a C# variable
+        for(; i < i2; i++);//They are C# statements
+        //...
+    }
+    //...
+}
+
+activity UseMWStatements(int Arg1, string Arg2)
+{
+    if(Arg1 < 0) throw new ArgumentOutOfRangeException("Arg1");//They are MW statements
+    if(string.IsNullOrEmpty(Arg2)) throw new ArgumentNullException("Arg2");//They are MW statements
+}
+
+activity UseCSStatements(int Arg1, string Arg2)
+{
+    ##
+    {
+        if(Arg1 < 0) throw new ArgumentOutOfRangeException("Arg1");//They are C# statements
+        if(string.IsNullOrEmpty(Arg2)) throw new ArgumentNullException("Arg2");//They are C# statements
+    }
+}
+
+activity TryParse(string String, out int Value) as bool
+{
+    Result = int.TryParse(String, out Value);
+}
+
+activity RepeatString(String String, int Count) as string
+{
+    ##
+    {
+        for (var i = 0; i < Count; i++)
+            Result += String;
+    }
+}
+
+activity GetUpperChars(string String, out char[] Chars) as int
+{
+    Chars = String.Where(ch => {
+        var isUpper = char.IsUpper(ch);
+        if (isUpper) Result++;
+        return isUpper;
+    }).ToArray();
+}
+
+activity InvokeActivities(string String, string Count)
+{
+    int count;
+    char[] chars;
+    if (new TryParse().Invoke(Count, out count) && count > 0 && new GetUpperChars().Invoke(new RepeatString().Invoke(String, count), out chars) > 0)
+    ##
+    {
+        foreach(var ch in chars)
+            Console.WriteLine(ch);
+    }
+    else
+        Console.WriteLine("Invalid arguments. String: {0}, Count: {1}", String, Count);
+}
+
+activity InvokeActivitiesTest()
+{
+    new InvokeActivities().Invoke("AbcD", "a");
+    new InvokeActivities().Invoke("AbcD", "0");
+    new InvokeActivities().Invoke("AbcD", "2");
+    new InvokeActivities().Invoke("abcd", "2");
+}
+
+//Fibonacci() can pass the compilation but falls into a dead loop when running
+activity Fibonacci(int Value) as int
+{
+    Result = Value <= 1 ? 1 : new Fibonacci().Invoke(Value - 1) + new Fibonacci().Invoke(Value - 2);
+}
+
+activity InvokeDelegates()
+{
+    if(Action != null)
+        Action.Invoke();
+    if(Action1 != null)
+        Action1.Invoke(1);
+    if(Action2 != null)
+        Action2.Invoke(2, "Action2");
+    if(Func != null)
+        Console.WriteLine("Invoker(): " + Func.Invoke());
+    if(Func1 != null)
+        Console.WriteLine("Invoker(): " + Func1.Invoke(11));
+    if(Func2 != null)
+        Console.WriteLine("Invoker(): " + Func2.Invoke(12, "Func2"));
+}
+##
+{
+    public ActivityAction Action { get; set; }//Activity delegates must be passed via properties or fields
+    public ActivityAction<int> Action1 { get; set; }
+    public ActivityAction<int, string> Action2 { get; set; }
+    public ActivityFunc<string> Func { get; set; }
+    public ActivityFunc<int, string> Func1 { get; set; }
+    public ActivityFunc<int, string, string> Func2 { get; set; }
+}
+
+activity Display(string String, int Int32) as string
+{
+    Result = string.Format("String: {0}, Int32: {1}", String, Int32);
+    Console.WriteLine("Display(): " + Result);
+}
+
+activity ActivityDelegatesTest()
+{
+    new InvokeDelegates {
+        Action = new Display().ToAction(),
+        Action1 = new Display().ToAction<Display, int>((act, arg1) => {
+            act.Int32 = arg1;
+        }),
+        Action2 = new Display().ToAction<Display, int, string>((act, arg1, arg2) => {
+            act.Int32 = arg1;
+            act.String = arg2;
+        }),
+        Func = new Display().ToFunc<Display, string>((act, result) => {
+            act.Result = result;
+        }),
+        Func1 = new Display().ToFunc<Display, int, string>((act, arg1, result) => {
+            act.Int32 = arg1;
+            act.Result = result;
+        }),
+        Func2 = new Display().ToFunc<Display, int, string, string>((act, arg1, arg2, result) => {
+            act.Int32 = arg1;
+            act.String = arg2;
+            act.Result = result;
+        }),
+    }.Invoke();
+/*output:
+Display(): String: , Int32: 0
+Display(): String: , Int32: 1
+Display(): String: Action2, Int32: 2
+Display(): String: , Int32: 0
+Invoker(): String: , Int32: 0
+Display(): String: , Int32: 11
+Invoker(): String: , Int32: 11
+Display(): String: Func2, Int32: 12
+Invoker(): String: Func2, Int32: 12
+*/
+}
+
+activity Delay(int Seconds)
+{
+    Console.WriteLine("Begin to delay {0} seconds", Seconds);
+    delay TimeSpan.FromSeconds(Seconds);
+    Console.WriteLine("End delaying {0} seconds", Seconds);
+}
+
+activity Parallel()
+{
+    parallel
+    {
+        //branch 1
+        new Delay().Invoke(4);
+        //branch 2
+        new Delay().Invoke(2);
+    }
+/*output:
+Begin to delay 4 seconds
+Begin to delay 2 seconds
+End delaying 2 seconds
+End delaying 4 seconds
+*/
+}
+
+activity Parallel2()
+{
+    parallel
+    {
+        //branch 1
+        new Delay().Invoke(4);
+        //branch 2
+        new Delay().Invoke(2);
+    }
+    until true;
+/*output:
+Begin to delay 4 seconds
+Begin to delay 2 seconds
+End delaying 2 seconds
+*/
+}
+
+activity ParallelForeach()
+{
+    pforeach(int seconds in new []{4, 2, 6})
+        new Delay().Invoke(seconds);
+/*output:
+Begin to delay 6 seconds
+Begin to delay 2 seconds
+Begin to delay 4 seconds
+End delaying 2 seconds
+End delaying 4 seconds
+End delaying 6 seconds
+*/
+}
+
+activity ParallelForeach2()
+{
+    pforeach(int seconds in new []{4, 2, 6})
+        new Delay().Invoke(seconds);
+    until true;
+/*output:
+Begin to delay 6 seconds
+Begin to delay 2 seconds
+Begin to delay 4 seconds
+End delaying 2 seconds
+*/
+}
+
+activity Pick()
+{
+    pick
+    {
+        //brach 1
+        on new Delay().Invoke(4);
+            do Console.WriteLine("After 4 seconds");
+        //brach 2
+        on new Delay().Invoke(2);
+            do Console.WriteLine("After 2 seconds");
+    }
+/*output:
+Begin to delay 4 seconds
+Begin to delay 2 seconds
+End delaying 2 seconds
+After 2 seconds
+*/
+}
+
+activity DelayEx(int Seconds) as int
+{
+    Console.WriteLine("Begin to delay {0} seconds", Seconds);
+    delay TimeSpan.FromSeconds(Seconds);
+    Result = _random.Next(5);
+    Console.WriteLine("End delaying {0} seconds. Result: {1}", Seconds, Result);
+}
+##
+{
+    private static readonly Random _random = new Random((int)DateTime.Now.Ticks);
+}
+
+activity StateMachine(bool Arg1)
+{
+    statemachine
+    {
+    Node1:
+        ~> Console.WriteLine("~> Node1");
+        <~ Console.WriteLine("<~ Node1");
+        if(!Arg1) do Console.WriteLine("Node1: goto Node2"); goto Node2;
+        if(Arg1) do Console.WriteLine("Node1: goto Node3"); goto Node3;
+    Node2:
+    {
+        int value;
+        ~> Console.WriteLine("~> Node2");
+        <~ Console.WriteLine("<~ Node2");
+        on value = new DelayEx().Invoke(5);
+        {
+            if(value == 3) do Console.WriteLine("Node2.delay(5).value==3: goto Node3"); goto Node3;
+            if(value == 4) do Console.WriteLine("Node2.delay(5).value==4: goto Node4"); goto Node4;
+        }
+        on value = new DelayEx().Invoke(3);
+            if(value == 2) do Console.WriteLine("Node2.delay(3).value==2: goto Node2"); goto Node2;
+        on value = new DelayEx().Invoke(20);
+            do Console.WriteLine("Node2.delay(20): goto Final"); goto Final;
+    }
+    Node3:
+    {
+        int value;
+        ~> Console.WriteLine("~> Node3");
+        <~ Console.WriteLine("<~ Node3");
+        on value = new DelayEx().Invoke(1);
+        {
+            if(value < 3) do Console.WriteLine("Node3.delay(1).value<3: goto Node2"); goto Node2;
+            if(value >= 3) do Console.WriteLine("Node3.delay(1).value>=3: goto Final"); goto Final;
+        }
+    }
+    Node4:
+        ~> Console.WriteLine("~> Node4");
+        <~ Console.WriteLine("<~ Node4");
+        goto Final;
+    Final: break
+        ~> Console.WriteLine("~> Final");
+    }
+/*possible output:
+~> Node1
+<~ Node1
+Node1: goto Node2
+~> Node2
+Begin to delay 20 seconds
+Begin to delay 3 seconds
+Begin to delay 5 seconds
+End delaying 3 seconds. Result: 2
+<~ Node2
+Node2.delay(3).value==2: goto Node2
+~> Node2
+Begin to delay 20 seconds
+Begin to delay 3 seconds
+Begin to delay 5 seconds
+End delaying 3 seconds. Result: 4
+Begin to delay 3 seconds
+End delaying 5 seconds. Result: 4
+<~ Node2
+Node2.delay(5).value==4: goto Node4
+~> Node4
+<~ Node4
+~> Final
+*/
+}
+
+activity Flow(int Number)
+{
+    flow goto Begin
+    {
+        Begin:
+            Console.Write(Number + ": ");
+            goto IsValid;
+        IsValid:
+            fif (Number > 0 && Number < 20) goto Evaluate;
+            else goto InvalidNumber;
+        Evaluate:
+            fswitch(Number)
+            {
+                case 7: goto LuckyNumber;
+                case 13: goto BadNumber;
+                default: goto NormalNumber;
+            }
+        LuckyNumber:
+            Console.WriteLine("lucky number");
+            break;
+        BadNumber:
+            Console.WriteLine("bad number");
+            break;
+        NormalNumber:
+            {
+                Console.WriteLine("normal number");
+                Number++;
+            }
+            goto Begin;
+        InvalidNumber:
+            Console.WriteLine("invalid number");
+            break;
+    }
+}
+
+activity FlowTest()
+{
+    foreach(int number in new int[]{7, 0, 13, 5})
+        new Flow().Invoke(number);
+/*output:
+7: lucky number
+0: invalid number
+13: bad number
+5: normal number
+6: normal number
+7: lucky number
+*/
+}
+
+activity Transacted(int Arg1)
+{
+    transacted
+    {
+        //...
+    }
+    timeout TimeSpan.FromSeconds(Arg1)
+    init (System.Activities.Statements.TransactionScope ts) => {
+        ts.IsolationLevel = System.Transactions.IsolationLevel.RepeatableRead;
+        ts.AbortInstanceOnTransactionFailure = false;
+    }
+    ;
+}
+
+activity Cancellable()
+{
+    parallel
+    {
+        //branch 1
+        cancellable
+        {
+            new Delay().Invoke(4);
+        }
+        cancel
+        {
+            Console.WriteLine("Cancellation handler for delaying 4 seconds");
+        }
+        //branch 2
+        cancellable
+        {
+            new Delay().Invoke(2);
+        }
+        cancel
+        {
+            Console.WriteLine("Cancellation handler for delaying 2 seconds");
+        }
+    }
+    until true;
+/*output:
+Begin to delay 4 seconds
+Begin to delay 2 seconds
+End delaying 2 seconds
+Cancellation handler for delaying 4 seconds
+*/
+}
+
+activity Compensable(bool Arg1)
+{
+    compensable cToken
+    {
+        new Delay().Invoke(4);
+    }
+    confirm
+    {
+        Console.WriteLine("Confirmation handler");
+    }
+    compensate
+    {
+        Console.WriteLine("Compensation handler");
+    }
+    cancel
+    {
+        Console.WriteLine("Cancellation handler");
+    }
+    if(Arg1) confirm cToken;
+    else compensate cToken;
+}
+
+activity Compensable2() as System.Activities.Statements.CompensationToken
+{
+    compensable explicit Result
+    {
+        new Delay().Invoke(4);
+    }
+    confirm
+    {
+        Console.WriteLine("Confirmation handler");
+    }
+    compensate
+    {
+        Console.WriteLine("Compensation handler");
+    }
+    cancel
+    {
+        Console.WriteLine("Cancellation handler");
+    }
+}
+
+activity Compensable2Test()
+{
+    confirm new Compensable2().Invoke();
+}
+
+activity RuntimeStatements()
+{
+    persist;
+    nopersist
+    {
+        //...
+    }
+    terminate for "reason message" throw new Exception("exception message");
+}
+
+}

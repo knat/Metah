@@ -1,0 +1,67 @@
+﻿//SecondLook.mw
+using System;
+using System.Activities;
+
+namespace HelloMW.SecondLook
+{
+    class Program
+    {
+        static void Main2()
+        {
+            WorkflowInvoker.Invoke(new Drive());
+        }
+    }
+
+    public enum DriveAction { Neutral = 1, Forward, Reverse, TurnOff }
+
+    activity Drive()
+    {
+        bool isMoved;
+        isMoved = false;
+        while (!isMoved)
+        {
+            statemachine goto InPark
+            {
+                DriveAction action;
+            InPark:
+                ~> Console.WriteLine("Enter InPark");
+                <~ Console.WriteLine("Exit InPark");
+                on action = new GetDriveAction().Invoke();
+                    if (action == DriveAction.Neutral) goto InNeutral;
+            InNeutral:
+                ~> Console.WriteLine("Enter InNeutral");
+                <~ Console.WriteLine("Exit InNeutral");
+                on action = new GetDriveAction().Invoke();
+                {
+                    if (action == DriveAction.Forward) goto InForward;
+                    if (action == DriveAction.Reverse) goto InReverse;
+                    if (action == DriveAction.TurnOff) goto TurnedOff;
+                }
+            InForward:
+                ~> { Console.WriteLine("Enter InForward"); isMoved = true; }
+                <~ Console.WriteLine("Exit InForward");
+                on action = new GetDriveAction().Invoke();
+                    if (action == DriveAction.Neutral) goto InNeutral;
+            InReverse:
+                ~> { Console.WriteLine("Enter InReverse"); isMoved = true; }
+                <~ Console.WriteLine("Exit InReverse");
+                on action = new GetDriveAction().Invoke();
+                    if (action == DriveAction.Neutral) goto InNeutral;
+            TurnedOff: break
+                ~> Console.WriteLine("TurnedOff");
+            }
+            Console.WriteLine("isMoved: " + isMoved);
+        }
+    }
+
+    activity GetDriveAction() as DriveAction
+    {
+        delay TimeSpan.FromSeconds(1);
+        Result = (DriveAction)_random.Next((int)DriveAction.Neutral, (int)DriveAction.TurnOff + 1);
+        Console.WriteLine("!action: " + Result.ToString());
+    }
+    ##
+    {
+        private static readonly Random _random = new Random((int)DateTime.Now.Ticks);
+    }
+}

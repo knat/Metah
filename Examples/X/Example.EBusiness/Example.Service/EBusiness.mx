@@ -1,0 +1,303 @@
+﻿//Ebusiness.mx
+//Visit http://metah.codeplex.com for more information
+alias "http://schemas.example.com" as nsbase;
+alias "http://schemas.example.com/ebusiness" as nsebiz;
+
+xnamespace {nsbase} {
+    type String10 restrict String
+        facets{
+            lengthrange: 1..10;
+        };
+    ;
+    type String20 restrict String
+        facets{
+            lengthrange: 1..20;
+        };
+    ;
+    type String40 restrict String
+        facets{
+            lengthrange: 1..40;
+        };
+    ;
+    type Int32List list Int32;
+    type Identifier restrict String20
+        facets{
+            patterns: @"\w+";
+        };
+    ;
+    type Email restrict String40
+        facets{
+            patterns: @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}";
+        };
+    ;
+    type Phone extend String20
+        attributes{
+            attribute Type[?; default: "Unknown"] as PhoneType;
+        };
+    ;
+    type PhoneType restrict String
+        facets{
+            enums: Unknown = "Unknown", Work = "Work", Home = "Home"
+        };
+    ;
+    type Phones
+        children{
+            element Phone[+; membername: Phones] as Phone;
+        };
+    ;
+    type Address
+        children{
+            choice{
+                element Normal as NormalAddress;
+                element Geography as GeographyAddress;
+            };
+        };
+    ;
+    type NormalAddress
+        attributes{
+            attribute Country as String20;
+            attribute State[?] as String20;
+            attribute City as String20;
+            attribute Address as String40;
+            attribute ZipCode as String10;
+        };
+    ;
+    type GeographyAddress
+        attributes{
+            attribute Longitude as SpatialNumber;
+            attribute Latitude as SpatialNumber;
+        };
+    ;
+    type SpatialNumber restrict Decimal
+        facets{
+            digits: 8..5;
+        };
+    ;
+    type MoneyBase restrict Decimal
+        facets{
+            digits: 19..2;
+        };
+    ;
+    type Money extend MoneyBase
+        attributes{
+            attribute Type as sys:Language;//zh-CN, en-US ...
+        };
+    ;
+    type Html
+        children{
+            wildcard {"http://www.w3.org/1999/xhtml"} skipvalidate[membername: Content];
+        };
+    ;
+    type ImageBase restrict Base64Binary
+        facets{
+            lengthrange: ..100000;
+        };
+    ;
+    type Image extend ImageBase
+        attributes{
+            attribute Mime as String20;
+        };
+    ;
+    type RequestMessage
+        children{
+            wildcard other mustvalidate[membername: Body];
+        };
+    ;
+    type ResponseMessage
+        children{
+            choice{
+                wildcard other mustvalidate[membername: Body];
+                element Fault as Fault;
+            };
+        };
+    ;
+    type Fault extend String
+    ;
+    element RequestMessage as RequestMessage;
+    element ResponseMessage as ResponseMessage;
+}
+xnamespace {nsebiz} {
+    import {nsbase} as nsbase;
+    //
+    element Id as Int32;
+    element IdList as Int32List;
+    type Contact[abstract]
+        attributes{
+            attribute Id[?] as Int32;
+            attribute Name as Identifier;
+            attribute Email as Email;
+            attribute RegistrationDate[?] as DateTime;
+        };
+        children{
+            element Phones as Phones;
+            element Address as Address;
+        };
+    ;
+    type Customer extend Contact
+        attributes{
+            attribute Reputation[?; default: "None"] as Reputation;
+            attribute OrderIds[?] as Int32List;
+        };
+    ;
+    type Reputation restrict String
+        facets{
+            enums: None = "None", Bronze = "Bronze", Silver = "Silver", Gold = "Gold", Diamond = "Diamond", Bad = "Bad"
+        };
+    ;
+    type Supplier extend Contact
+        attributes{
+            attribute ProductIds[?] as Int32List;
+        };
+        children{
+            element BankAccount as BankAccount;
+        };
+    ;
+    type BankAccount extend String20
+        attributes{
+            attribute Type as String10;
+        };
+    ;
+    //
+    type Order
+        attributes{
+            attribute Id[?] as Int32;
+            attribute CustomerId as Int32;
+            attribute OrderDate as DateTime;
+            attribute Urgent[?; default: false] as Boolean;
+        };
+        children{
+            element Phones as Phones;
+            element ShippingAddress as Address;
+            element Detail[+; membername: Details] as OrderDetail;
+        };
+    ;
+    type OrderDetail
+        attributes{
+            attribute ProductId as Int32;
+            attribute Quantity as UInt32;
+        };
+        children{
+            element UnitPrice as Money;
+        };
+    ;
+    //
+    type Product[abstract]
+        attributes{
+            attribute Id[?] as Int32;
+            attribute Name as String20;
+            attribute StockQuantity as UInt32;
+        };
+        children{
+            element Description as Html;
+            element Image[?] as Image;
+            element Price as Money;
+        };
+    ;
+    type Shoe[abstract] extend Product
+        children{
+            element Size as ShoeSize;
+        };
+    ;
+    type ShoeSizeBase restrict Decimal
+        facets{
+            digits: 3..1;
+        };
+    ;
+    type ShoeSize extend ShoeSizeBase
+        attributes{
+            attribute Unit[default: "CM"] as ShoeUnit;
+        };
+    ;
+    type ShoeUnit restrict String
+        facets{
+            enums: CM="CM", EU="EU", UK="UK", US="US";
+        };
+    ;
+    type OutdoorShoe extend Shoe
+        attributes{
+            attribute Waterproof[?] as Boolean;
+        };
+    ;
+    type SuperOutdoorShoe restrict OutdoorShoe
+        attributes{
+            attribute Id[?] as Int32;
+            attribute Name as String20;
+            attribute StockQuantity as UInt32;
+            attribute Waterproof[fixed: true] as Boolean;
+        };
+        children{
+            element Description as Html;
+            element Image[?] as Image;
+            element Price as Money;
+            element Size as ShoeSize;
+        };
+    ;
+    type Boot extend Shoe
+    ;
+    type Clothing[abstract] extend Product
+        attributes{
+            attribute Gender as Gender;
+            attribute Size as ClothingSize;
+        };
+    ;
+    type Gender restrict String
+        facets{
+            enums: Men="Men", Women="Women", Junior="Junior";
+        };
+    ;
+    type ClothingSize restrict String
+        facets{
+            enums: S="S", M="M", L="L", XL="XL", XXL="XXL", XXXL="XXXL";
+        };
+    ;
+    type TShirt extend Clothing
+    ;
+    type Outerwear extend Clothing
+    ;
+    //
+    type CustomersQueryResult
+        children{
+            element Customers as
+                type
+                    children{
+                        elementref Customer[*; membername: Customers];
+                    };
+                ;
+            ;
+            element Orders as
+                type
+                    children{
+                        elementref Order[*; membername: Orders];
+                    };
+                ;
+            ;
+            element Products as
+                type
+                    children{
+                        elementref Product[*; membername: Products];
+                    };
+                ;
+            ;
+        };
+    ;
+    //
+    element Contact[abstract] as Contact;
+    element Customer[substitute: Contact] as Customer;
+    element Supplier[substitute: Contact] as Supplier;
+    element Order as Order;
+    element Product[abstract] as Product;
+    element Shoe[abstract; substitute: Product] as Shoe;
+    element OutdoorShoe[substitute: Shoe] as OutdoorShoe;
+    element SuperOutdoorShoe[substitute: OutdoorShoe] as SuperOutdoorShoe;
+    element Boot[substitute: Shoe] as Boot;
+    element Clothing[abstract; substitute: Product] as Clothing;
+    element TShirt[substitute: Clothing] as TShirt;
+    element Outerwear[substitute: Clothing] as Outerwear;
+    element CustomersQueryResult as CustomersQueryResult
+        key Customer as {nsebiz}Customers/{nsebiz}Customer => @{}Id;
+        key Order as {nsebiz}Orders/{nsebiz}Order => @{}Id;
+        key Product as {nsebiz}Products/{nsebiz}* => @{}Id;
+        keyref CustomerToOrders[splitlistvalue] ref Order as {nsebiz}Customers/{nsebiz}Customer => @{}OrderIds;
+        keyref DetailToProduct ref Product as {nsebiz}Orders/{nsebiz}Order/{nsebiz}Detail => @{}ProductId;
+    ;
+}

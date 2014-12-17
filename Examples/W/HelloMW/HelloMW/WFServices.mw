@@ -1,0 +1,575 @@
+﻿using System;
+using System.Activities;
+using System.ServiceModel;
+using System.ServiceModel.Activities;
+using System.ServiceModel.Description;
+using System.ServiceModel.Dispatcher;
+using System.ServiceModel.Channels;
+using System.Xml.Linq;
+using System.Runtime.Serialization;
+
+namespace WFServices
+{
+class Program
+{
+    //You need run Visual Studio as Administrator to run/debug the program
+    static void Main2()
+    {
+        Run(new Service(), new Client(), new WSHttpContextBinding());
+        Run(new RequestCorrService(), new RequestCorrClient(), new WSHttpContextBinding());
+        Run(new ExplicitContextCorrService(), new ExplicitContextCorrClient(), new WSHttpContextBinding());
+        Run(new ContentCorrService(), new ContentCorrClient(), new BasicHttpBinding());
+        Run(new ExplicitContentCorrService(), new ContentCorrClient(), new BasicHttpBinding());
+        RunCallcack();
+    }
+    static void Run(Activity sericeActivity, Activity clientActivity, Binding binding, bool addContract2 = true)
+    {
+        try
+        {
+            var serviceHost = new WorkflowServiceHost(sericeActivity, Constants.ServiceAddress);
+            serviceHost.AddServiceEndpoint(Constants.Contract1Name, binding, Constants.ServiceAddress);
+            if (addContract2)
+                serviceHost.AddServiceEndpoint(Constants.Contract2Name, binding, Constants.ServiceAddress);
+            serviceHost.Description.Behaviors.Add(new ServiceMetadataBehavior { HttpGetEnabled = true });
+            serviceHost.Description.Behaviors.Add(new ServiceBehaviorAttribute { IncludeExceptionDetailInFaults = true });
+            serviceHost.Open();
+            Console.WriteLine("Host: service host opened for " + sericeActivity.GetType().FullName);
+            if(clientActivity!=null)
+                WorkflowInvoker.Invoke(clientActivity);
+            Console.WriteLine("Host: press enter to end");
+            Console.ReadLine();
+            serviceHost.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+    static void RunCallcack()
+    {
+        try
+        {
+            var clientHost = new WorkflowServiceHost(new CallbackClient());
+            var binding = new WSHttpContextBinding();
+            clientHost.AddServiceEndpoint(Constants.ClientContractName, binding, Constants.ClientAddress);
+            clientHost.AddServiceEndpoint(Constants.CallbackContractName, binding, Constants.CallbackAddress);
+            clientHost.Open();
+            Console.WriteLine("Host: client host opened");
+            var serviceHost = new WorkflowServiceHost(new CallbackService());
+            serviceHost.AddServiceEndpoint(Constants.Contract1Name, binding, Constants.ServiceAddress);
+            serviceHost.Open();
+            Console.WriteLine("Host: service host opened");
+            WorkflowInvoker.Invoke(new CallbackTest());
+            Console.WriteLine("Host: press enter to end");
+            Console.ReadLine();
+            serviceHost.Close();
+            clientHost.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+}
+
+public static class Constants
+{
+    public const string NamespaceString = "http://schemas.example.com/project1";
+    public static readonly XNamespace Namespace = XNamespace.Get(NamespaceString);
+    public static readonly XName Contract1Name = Namespace.GetName("IContract1");
+    public const string Contract1Op1Name = "Operation1";
+    public const string Contract1Op1RetPara1Name = "RetPara1";
+    public const string Contract1Op1RetPara2Name = "RetPara2";
+    public const string Contract1Op2Name = "Operation2";
+    public const string Contract1Op2Para1Name = "Para1";
+    public const string Contract1Op2Para2Name = "Para2";
+    public static readonly XName Contract2Name = Namespace.GetName("IContract2");
+    public const string Contract2Op1Name = "Operation1";
+    public static readonly XName ClientContractName = Namespace.GetName("IClientContract");
+    public const string ClientOp1Name = "ClientOperation1";
+    public static readonly XName CallbackContractName = Namespace.GetName("ICallbackContract");
+    public const string CallbackOp1Name = "CallbackOperation1";
+    public static readonly Uri ServiceAddress = new Uri("http://localhost:8080/WFService");
+    public static readonly Uri ClientAddress = new Uri("http://localhost:8081/client");
+    public static readonly Uri CallbackAddress = new Uri("http://localhost:8081/client/callback");
+    internal static readonly Endpoint CtxBindingEndpoint = new Endpoint { AddressUri = ServiceAddress, Binding = new WSHttpContextBinding() };
+    internal static readonly Endpoint BasicBindingEndpoint = new Endpoint { AddressUri = ServiceAddress, Binding = new BasicHttpBinding() };
+    private static readonly XPathMessageContext XPathMessageContext = new XPathMessageContext();
+    internal static readonly MessageQuerySet Contract1Op1RetPara1MsgQrySet = new MessageQuerySet {
+        {"Id", new XPathMessageQuery("sm:body()/project1:" + Contract1Op1Name + "Response/project1:" + Contract1Op1RetPara1Name, XPathMessageContext)}
+    };
+    internal static readonly MessageQuerySet Contract1Op2Para1MsgQrySet = new MessageQuerySet {
+        {"Id", new XPathMessageQuery("sm:body()/project1:" + Contract1Op2Name + "/project1:" + Contract1Op2Para1Name, XPathMessageContext)}
+    };
+    internal static readonly MessageQuerySet Data1Member1MsgQrySet = new MessageQuerySet {
+        {"Id", new XPathMessageQuery("sm:body()/project1:Data1/project1:Member1", XPathMessageContext)}
+    };
+    static Constants()
+    {
+        XPathMessageContext.AddNamespace("project1", NamespaceString);
+    }
+}
+
+[DataContract(Namespace = Constants.NamespaceString)]
+public class Data1
+{
+    [DataMember]
+    public int Member1 { get; set; }
+    [DataMember]
+    public string Member2 { get; set; }
+    public override string ToString()
+    {
+        return string.Format("Member1: {0}, Member2: {1}", Member1, Member2);
+    }
+}
+//
+//
+//first look
+//
+//
+activity Service()
+{
+    Data1 data;
+    int para1;
+    string para2;
+    //contract1.op1
+    receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> data)
+        init rcv => {
+            rcv.CanCreateInstance = true;
+        }
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", data);
+    sendreply(Constants.Contract1Op1RetPara1Name <~ data.Member1 + 1, Constants.Contract1Op1RetPara2Name <~ data.Member2 + "++")
+        contextcorr ctxcorr1
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 sendreply");
+    //contract1.op2
+    receive {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name ~> para1, Constants.Contract1Op2Para2Name ~> para2)
+        ref contextcorr ctxcorr1
+    ;
+    Console.WriteLine("Service: after Contract1.Op2 receive. para1: {0}, para2: {1}", para1, para2);
+    sendreply(<~ new Data1 {Member1 = para1 + data.Member1, Member2 = para2 + data.Member2});
+    Console.WriteLine("Service: after Contract1.Op2 sendreply");
+    //contract2.op1
+    receive {Constants.Contract2Name, Constants.Contract2Op1Name} (~> data)
+        ref contextcorr ctxcorr1
+    ;
+    Console.WriteLine("Service: after Contract2.Op1 receive. data: {0}", data);
+}
+
+activity Client()
+{
+    Data1 data;
+    int para1;
+    string para2;
+    //contract1.op1
+    send {Constants.Contract1Name, Constants.Contract1Op1Name} (<~ new Data1 {Member1 = 42, Member2 = "Hello"})
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract1.Op1 send");
+    receivereply(Constants.Contract1Op1RetPara1Name ~> para1, Constants.Contract1Op1RetPara2Name ~> para2)
+        contextcorr ctxcorr1
+    ;
+    Console.WriteLine("Client: after Contract1.Op1 receivereply. para1: {0}, para2: {1}", para1, para2);
+    //contract1.op2
+    send {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name <~ para1, Constants.Contract1Op2Para2Name <~ para2)
+        ref contextcorr ctxcorr1
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract1.Op2 send");
+    receivereply(~> data);
+    Console.WriteLine("Client: after Contract1.Op2 receivereply. data: {0}", data);
+    //contract2.op1
+    send {Constants.Contract2Name, Constants.Contract2Op1Name} (<~ data)
+        ref contextcorr ctxcorr1
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract2.Op1 send");
+}
+//
+//
+//request-reply correlation
+//
+//
+activity RequestCorrService()
+{
+    Data1 data;
+    int para1;
+    string para2;
+    //contract1.op1
+    {
+        receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> data)
+            requestcorr reqcorr1
+            init rcv => {
+                rcv.CanCreateInstance = true;
+            }
+        ;
+        Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", data);
+    }
+    {
+        sendreply(Constants.Contract1Op1RetPara1Name <~ data.Member1 + 1, Constants.Contract1Op1RetPara2Name <~ data.Member2 + "++")
+            contextcorr ctxcorr1
+            ref requestcorr reqcorr1
+        ;
+        Console.WriteLine("Service: after Contract1.Op1 sendreply");
+    }
+    //contract1.op2
+    {
+        receive {Constants.Contract1Name, Constants.Contract1Op2Name}
+            (Constants.Contract1Op2Para1Name ~> para1, Constants.Contract1Op2Para2Name ~> para2)
+            requestcorr reqcorr2
+            ref contextcorr ctxcorr1
+        ;
+        Console.WriteLine("Service: after Contract1.Op2 receive. para1: {0}, para2: {1}", para1, para2);
+    }
+    {
+        sendreply(<~ new Data1 {Member1 = para1 + data.Member1, Member2 = para2 + data.Member2})
+            ref requestcorr reqcorr2
+        ;
+        Console.WriteLine("Service: after Contract1.Op2 sendreply");
+    }
+    //contract2.op1
+    receive {Constants.Contract2Name, Constants.Contract2Op1Name} (~> data)
+        ref contextcorr ctxcorr1
+    ;
+    Console.WriteLine("Service: after Contract2.Op1 receive. data: {0}", data);
+}
+
+activity RequestCorrClient()
+{
+    Data1 data;
+    int para1;
+    string para2;
+
+    {
+        send {Constants.Contract1Name, Constants.Contract1Op1Name} (<~ new Data1 {Member1 = 42, Member2 = "Hello"})
+            requestcorr reqcorr1
+            init snd => {
+                snd.Endpoint = Constants.CtxBindingEndpoint;
+            }
+        ;
+        Console.WriteLine("Client: after Contract1.Op1 send");
+    }
+    {
+        receivereply(Constants.Contract1Op1RetPara1Name ~> para1, Constants.Contract1Op1RetPara2Name ~> para2)
+            contextcorr ctxcorr1
+            ref requestcorr reqcorr1
+        ;
+        Console.WriteLine("Client: after Contract1.Op1 receivereply. para1: {0}, para2: {1}", para1, para2);
+    }
+
+    {
+        send {Constants.Contract1Name, Constants.Contract1Op2Name}
+            (Constants.Contract1Op2Para1Name <~ para1, Constants.Contract1Op2Para2Name <~ para2)
+            requestcorr reqcorr2
+            ref contextcorr ctxcorr1
+            init snd => {
+                snd.Endpoint = Constants.CtxBindingEndpoint;
+            }
+        ;
+        Console.WriteLine("Client: after Contract1.Op2 send");
+    }
+    {
+        receivereply(~> data)
+            ref requestcorr reqcorr2
+        ;
+        Console.WriteLine("Client: after Contract1.Op2 receivereply. data: {0}", data);
+    }
+    send {Constants.Contract2Name, Constants.Contract2Op1Name} (<~ data)
+        ref contextcorr ctxcorr1
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract2.Op1 send");
+}
+//
+//
+//explicit context correlation
+//
+//
+activity Contract1Op1Service(System.ServiceModel.Activities.CorrelationHandle CtxCorrHandle) as Data1
+{
+    receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> Result)
+        init rcv => {
+            rcv.CanCreateInstance = true;
+        }
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", Result);
+    sendreply(Constants.Contract1Op1RetPara1Name <~ Result.Member1 + 1, Constants.Contract1Op1RetPara2Name <~ Result.Member2 + "++")
+        contextcorr explicit CtxCorrHandle
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 sendreply");
+}
+activity Contract1Op2Service(System.ServiceModel.Activities.CorrelationHandle CtxCorrHandle, Data1 Data)
+{
+    int para1;
+    string para2;
+    receive {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name ~> para1, Constants.Contract1Op2Para2Name ~> para2)
+        ref contextcorr CtxCorrHandle
+    ;
+    Console.WriteLine("Service: after Contract1.Op2 receive. para1: {0}, para2: {1}", para1, para2);
+    sendreply(<~ new Data1 {Member1 = para1 + Data.Member1, Member2 = para2 + Data.Member2});
+    Console.WriteLine("Service: after Contract1.Op2 sendreply");
+}
+activity ExplicitContextCorrService()
+{
+    System.ServiceModel.Activities.CorrelationHandle ctxCorrHandle;
+    Data1 data;
+    data = new Contract1Op1Service().Invoke(ctxCorrHandle);
+    new Contract1Op2Service().Invoke(ctxCorrHandle, data);
+    //contract2.op1
+    receive {Constants.Contract2Name, Constants.Contract2Op1Name} (~> data)
+        ref contextcorr ctxCorrHandle
+    ;
+    Console.WriteLine("Service: after Contract2.Op1 receive. data: {0}", data);
+}
+activity Contract1Op1Client(System.ServiceModel.Activities.CorrelationHandle CtxCorrHandle, out int Para1, out string Para2)
+{
+    send {Constants.Contract1Name, Constants.Contract1Op1Name} (<~ new Data1 {Member1 = 42, Member2 = "Hello"})
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract1.Op1 send");
+    receivereply(Constants.Contract1Op1RetPara1Name ~> Para1, Constants.Contract1Op1RetPara2Name ~> Para2)
+        contextcorr explicit CtxCorrHandle
+    ;
+    Console.WriteLine("Client: after Contract1.Op1 receivereply. para1: {0}, para2: {1}", Para1, Para2);
+}
+activity Contract1Op2Client(System.ServiceModel.Activities.CorrelationHandle CtxCorrHandle, int Para1, string Para2) as Data1
+{
+    send {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name <~ Para1, Constants.Contract1Op2Para2Name <~ Para2)
+        ref contextcorr CtxCorrHandle
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract1.Op2 send");
+    receivereply(~> Result);
+    Console.WriteLine("Client: after Contract1.Op2 receivereply. data: {0}", Result);
+}
+activity ExplicitContextCorrClient()
+{
+    System.ServiceModel.Activities.CorrelationHandle ctxCorrHandle;
+    Data1 data;
+    int para1;
+    string para2;
+    new Contract1Op1Client().Invoke(ctxCorrHandle, out para1, out para2);
+    data = new Contract1Op2Client().Invoke(ctxCorrHandle, para1, para2);
+    //contract2.op1
+    send {Constants.Contract2Name, Constants.Contract2Op1Name} (<~ data)
+        ref contextcorr ctxCorrHandle
+        init snd => {
+            snd.Endpoint = Constants.CtxBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract2.Op1 send");
+}
+//
+//
+//content correlation
+//
+//
+activity ContentCorrService()
+{
+    Data1 data;
+    int para1;
+    string para2;
+    //contract1.op1
+    receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> data)
+        init rcv => {
+            rcv.CanCreateInstance = true;
+        }
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", data);
+    sendreply(Constants.Contract1Op1RetPara1Name <~ data.Member1, Constants.Contract1Op1RetPara2Name <~ data.Member2 + "++")
+        contentcorr contentCorr1 on Constants.Contract1Op1RetPara1MsgQrySet
+    ;
+    /*You can comment the last sendreply and uncomment me
+    sendreply(Constants.Contract1Op1RetPara1Name <~ data.Member1, Constants.Contract1Op1RetPara2Name <~ data.Member2 + "++");
+    contentcorr contentCorr1 on {"Id", data.Member1.ToString()}
+    */
+    Console.WriteLine("Service: after Contract1.Op1 sendreply");
+    //contract1.op2
+    receive {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name ~> para1, Constants.Contract1Op2Para2Name ~> para2)
+        ref contentcorr contentCorr1 on Constants.Contract1Op2Para1MsgQrySet
+    ;
+    Console.WriteLine("Service: after Contract1.Op2 receive. para1: {0}, para2: {1}", para1, para2);
+    sendreply(<~ new Data1 {Member1 = para1, Member2 = para2 + data.Member2});
+    Console.WriteLine("Service: after Contract1.Op2 sendreply");
+    //contract2.op1
+    receive {Constants.Contract2Name, Constants.Contract2Op1Name} (~> data)
+        ref contentcorr contentCorr1 on Constants.Data1Member1MsgQrySet
+    ;
+    Console.WriteLine("Service: after Contract2.Op1 receive. data: {0}", data);
+}
+activity ContentCorrClient()
+{
+    Data1 data;
+    int para1;
+    string para2;
+    //contract1.op1
+    send {Constants.Contract1Name, Constants.Contract1Op1Name} (<~ new Data1 {Member1 = 42, Member2 = "Hello"})
+        init snd => {
+            snd.Endpoint = Constants.BasicBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract1.Op1 send");
+    receivereply(Constants.Contract1Op1RetPara1Name ~> para1, Constants.Contract1Op1RetPara2Name ~> para2)
+    ;
+    Console.WriteLine("Client: after Contract1.Op1 receivereply. para1: {0}, para2: {1}", para1, para2);
+    //contract1.op2
+    send {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name <~ para1, Constants.Contract1Op2Para2Name <~ para2)
+        init snd => {
+            snd.Endpoint = Constants.BasicBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract1.Op2 send");
+    receivereply(~> data);
+    Console.WriteLine("Client: after Contract1.Op2 receivereply. data: {0}", data);
+    //contract2.op1
+    send {Constants.Contract2Name, Constants.Contract2Op1Name} (<~ data)
+        init snd => {
+            snd.Endpoint = Constants.BasicBindingEndpoint;
+        }
+    ;
+    Console.WriteLine("Client: after Contract2.Op1 send");
+}
+//
+//
+//explicit content correlation
+//
+//
+activity Contract1Op1Service2(System.ServiceModel.Activities.CorrelationHandle ContentCorrHandle) as Data1
+{
+    receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> Result)
+        init rcv => {
+            rcv.CanCreateInstance = true;
+        }
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", Result);
+    sendreply(Constants.Contract1Op1RetPara1Name <~ Result.Member1, Constants.Contract1Op1RetPara2Name <~ Result.Member2 + "++")
+        contentcorr explicit ContentCorrHandle on Constants.Contract1Op1RetPara1MsgQrySet
+    ;
+    /*You can comment the last sendreply and uncomment me
+    sendreply(Constants.Contract1Op1RetPara1Name <~ Result.Member1, Constants.Contract1Op1RetPara2Name <~ Result.Member2 + "++");
+    contentcorr explicit ContentCorrHandle on {"Id", Result.Member1.ToString()}
+    */
+    Console.WriteLine("Service: after Contract1.Op1 sendreply");
+}
+activity Contract1Op2Service2(System.ServiceModel.Activities.CorrelationHandle ContentCorrHandle, Data1 Data)
+{
+    int para1;
+    string para2;
+    receive {Constants.Contract1Name, Constants.Contract1Op2Name}
+        (Constants.Contract1Op2Para1Name ~> para1, Constants.Contract1Op2Para2Name ~> para2)
+        ref contentcorr ContentCorrHandle on Constants.Contract1Op2Para1MsgQrySet
+    ;
+    Console.WriteLine("Service: after Contract1.Op2 receive. para1: {0}, para2: {1}", para1, para2);
+    sendreply(<~ new Data1 {Member1 = para1, Member2 = para2 + Data.Member2});
+    Console.WriteLine("Service: after Contract1.Op2 sendreply");
+}
+activity ExplicitContentCorrService()
+{
+    System.ServiceModel.Activities.CorrelationHandle contentCorrHandle;
+    Data1 data;
+    data = new Contract1Op1Service2().Invoke(contentCorrHandle);
+    new Contract1Op2Service2().Invoke(contentCorrHandle, data);
+    //contract2.op1
+    receive {Constants.Contract2Name, Constants.Contract2Op1Name} (~> data)
+        ref contentcorr contentCorrHandle on Constants.Data1Member1MsgQrySet
+    ;
+    Console.WriteLine("Service: after Contract2.Op1 receive. data: {0}", data);
+}
+//
+//
+//callback correlation
+//
+//
+activity CallbackService()
+{
+    Data1 data;
+    receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> data)
+        callbackcorr callbackCorr1
+        init rcv => {
+            rcv.CanCreateInstance = true;
+        }
+    ;
+    Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", data);
+    send {Constants.CallbackContractName, Constants.CallbackOp1Name}(<~ new Data1{Member1 = data.Member1 + 1, Member2 = data.Member2 + "++"})
+        ref callbackcorr callbackCorr1
+        init snd => {
+            snd.Endpoint = new Endpoint {
+                Binding = new WSHttpContextBinding()
+            };
+        }
+    ;
+}
+activity CallbackClient()
+{
+    Data1 data;
+    receive {Constants.ClientContractName, Constants.ClientOp1Name}()
+        init rcv => {
+            rcv.CanCreateInstance = true;
+        }
+    ;
+    send {Constants.Contract1Name, Constants.Contract1Op1Name}(<~ new Data1{Member1 = 42, Member2 = "Hello"})
+        callbackcorr callbackCorr1
+        init snd => {
+            snd.Endpoint = new Endpoint {
+                AddressUri = Constants.ServiceAddress,
+                Binding = new WSHttpContextBinding {
+                    ClientCallbackAddress = Constants.CallbackAddress
+                }
+            };
+        }
+    ;
+    receive {Constants.CallbackContractName, Constants.CallbackOp1Name}(~> data)
+        ref callbackcorr callbackCorr1
+    ;
+    Console.WriteLine("Callback: after ICallbackContract.Op1 receive. data: {0}", data);
+}
+activity CallbackTest()
+{
+    send {Constants.ClientContractName, Constants.ClientOp1Name}()
+        init snd => {
+            snd.Endpoint = new Endpoint {
+                AddressUri = Constants.ClientAddress,
+                Binding = new WSHttpContextBinding()
+            };
+        }
+    ;
+}
+//
+//
+//transacted receive
+//
+//
+activity TransactedReceive()
+{
+    transactedreceive
+    {
+        Data1 data;
+        receive {Constants.Contract1Name, Constants.Contract1Op1Name} (~> data)
+            init rcv => {
+                rcv.CanCreateInstance = true;
+            }
+        ;
+        Console.WriteLine("Service: after Contract1.Op1 receive. data: {0}", data);
+    }
+}
+
+}

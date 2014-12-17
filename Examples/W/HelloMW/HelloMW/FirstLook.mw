@@ -1,0 +1,79 @@
+﻿//FirstLook.mw
+using System;
+using System.Threading;
+using System.Collections.Generic;
+using System.Activities;
+import HelloMW.FirstLook;
+
+namespace HelloMW.FirstLook {
+    public sealed activity SequentialNumberGuess(int MaxNumber, out int Turns) {
+        int target, guess;
+        target = new Random().Next(1, MaxNumber) + 1;
+        do {
+            guess = new Prompt().Invoke("EnterGuess", "Please enter a number between 1 and " + MaxNumber);
+            Turns++;
+            if (guess != target) {
+                if (guess < target)
+                    Console.WriteLine("Your guess is too low.");
+                else
+                    Console.WriteLine("Your guess is too high.");
+            }
+        }
+        while (guess != target);
+    }
+
+    public sealed activity Prompt(string BookmarkName, string Text) as int {
+        Console.WriteLine(Text);
+        Result = new ReadInt().Invoke(BookmarkName);
+    }
+
+    public sealed class ReadInt : NativeActivity<int> {
+        public InArgument<string> BookmarkName { get; set; }
+        protected override void Execute(NativeActivityContext context) {
+            context.CreateBookmark(BookmarkName.Get(context), OnReadComplete);
+        }
+        protected override bool CanInduceIdle { get { return true; } }
+        void OnReadComplete(NativeActivityContext context, Bookmark bookmark, object state) {
+            Result.Set(context, (int)state);
+        }
+    }
+
+    class Program {
+        static void Main() {
+            var syncEvent = new AutoResetEvent(false);
+            var idleEvent = new AutoResetEvent(false);
+            var wfApp = new WorkflowApplication(new SequentialNumberGuess(),
+                new Dictionary<string, object>() { { "MaxNumber", 100 } });
+            wfApp.Completed = (WorkflowApplicationCompletedEventArgs e) => {
+                Console.WriteLine("Congratulations, you guessed the number in {0} turns.", e.Outputs["Turns"]);
+                syncEvent.Set();
+            };
+            wfApp.Aborted = (WorkflowApplicationAbortedEventArgs e) => {
+                Console.WriteLine(e.Reason);
+                syncEvent.Set();
+            };
+            wfApp.OnUnhandledException = (WorkflowApplicationUnhandledExceptionEventArgs e) => {
+                Console.WriteLine(e.UnhandledException.ToString());
+                return UnhandledExceptionAction.Terminate;
+            };
+            wfApp.Idle = (WorkflowApplicationIdleEventArgs e) => {
+                idleEvent.Set();
+            };
+            wfApp.Run();
+            var handles = new WaitHandle[] { syncEvent, idleEvent };
+            while (WaitHandle.WaitAny(handles) == 1) {
+                var isValidEntry = false;
+                while (!isValidEntry) {
+                    int guess;
+                    if (!int.TryParse(Console.ReadLine(), out guess)) {
+                        Console.WriteLine("Please enter an integer.");
+                    }
+                    else {
+                        isValidEntry = true;
+                        wfApp.ResumeBookmark("EnterGuess", guess);
+                    }
+                }
+            }
+        }
+    }
+}

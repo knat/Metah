@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Condition="'$(BuildingInsideVisualStudio)' == 'true'">
+    <AvailableItemName Include="MetahXCSharp" />
+    <AvailableItemName Include="MetahX" />
+  </ItemGroup>
+  <PropertyGroup>
+    <MetahXEmbedRuntime Condition="$(MetahXEmbedRuntime) == ''">false</MetahXEmbedRuntime>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PrepareResourcesDependsOn>
+      MetahXCompilation;
+      $(PrepareResourcesDependsOn)
+    </PrepareResourcesDependsOn>
+  </PropertyGroup>
+  <UsingTask TaskName="Metah.MSBuild.X.MetahXBuilder" AssemblyFile="$(MSBuildThisFileDirectory)Metah.MSBuild.dll" />
+  <Target Name="MetahXCompilation">
+    <Message Text="======== Begin Metah.X Compilation ========" Importance="high" />
+    <MetahXBuilder
+      ProjectDirectory="$(MSBuildProjectDirectory)"
+      PreprocessorSymbols="$(DefineConstants)"
+      CSharpFiles="@(Compile)"
+      MetadataReferences="@(ReferencePath)"
+      XCSharpFiles="@(MetahXCSharp)"
+      XFiles="@(MetahX)"
+      EmbedRuntime="$(MetahXEmbedRuntime)"
+      >
+      <Output TaskParameter="OutputCSharpFiles" ItemName="Compile" />
+    </MetahXBuilder>
+    <Message Text="======== End Metah.X Compilation ========" Importance="high" />
+  </Target>
+</Project>
