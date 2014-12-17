@@ -12,7 +12,7 @@ System.Activities.Statements -> SAS
 System.ServiceModel.Activities -> SSA
 ```
 
-All the code listings in this article are contained in [HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW").
+All the code listings in this article are contained in [HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW).
 
 I'm a .NET programmer in China and my English is not good(maybe poor), I'm very appreciative if you would improve this article.
 
