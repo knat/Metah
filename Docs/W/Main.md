@@ -921,7 +921,7 @@ activity TryParse(string String, out int Value) as bool
     Result = int.TryParse(String, out Value);
 }
 
-activity RepeatString(String String, int Count) as string
+activity RepeatString(string String, int Count) as string
 {
     ##
     {
@@ -1977,7 +1977,7 @@ activity RequestCorrClient()
     Data1 data;
     int para1;
     string para2;
-
+    //contract1.op1
     {
         send {Constants.Contract1Name, Constants.Contract1Op1Name} (<~ new Data1 {Member1 = 42, Member2 = "Hello"})
             requestcorr reqcorr1
@@ -1994,7 +1994,7 @@ activity RequestCorrClient()
         ;
         Console.WriteLine("Client: after Contract1.Op1 receivereply. para1: {0}, para2: {1}", para1, para2);
     }
-
+    //contract1.op2
     {
         send {Constants.Contract1Name, Constants.Contract1Op2Name}
             (Constants.Contract1Op2Para1Name <~ para1, Constants.Contract1Op2Para2Name <~ para2)
@@ -2012,6 +2012,7 @@ activity RequestCorrClient()
         ;
         Console.WriteLine("Client: after Contract1.Op2 receivereply. data: {0}", data);
     }
+    //contract2.op1
     send {Constants.Contract2Name, Constants.Contract2Op1Name} (<~ data)
         ref contextcorr ctxcorr1
         init snd => {
