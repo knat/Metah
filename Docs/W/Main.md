@@ -461,8 +461,9 @@ During the project compilation, firstly, the MW files(.mw) and the C# files of t
 MW projects extend from C# projects. Any existing C# projects can support MW by inserting the following code at the end of the .csproj file:
 
 ```xml
+<!---->
 <Import Project="$([System.IO.Directory]::GetFiles($([System.IO.Path]::Combine($([System.Environment]::GetFolderPath(SpecialFolder.LocalApplicationData)), `Microsoft\VisualStudio\12.0\Extensions`)), `Metah.W.targets`, System.IO.SearchOption.AllDirectories))" />
-
+<!---->
 ```
 
 ![](EditCSProj.png)
@@ -1502,7 +1503,7 @@ cancellation-handler:
 'cancel' sequence-statement
 ;
 compensable-statement:
-'compensable' ('explicit'? C#Identifier)?
+'compensable' ('explicit'? C#-identifier)?
 sequence-statement confirmation-handler? compensation-handler? cancellation-handler?
 ;
 confirmation-handler:
