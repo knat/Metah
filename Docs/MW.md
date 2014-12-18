@@ -165,17 +165,12 @@ We can classify activites into two groups: primitive activities and composite ac
 
 As the preceding code demonstrates, composing activities in C#(/VB) is very verbose. Is there any way to simplify it? Yes! Welcome to the metaprogramming world and welcome to use Metah.W(MW):
 
-(1). You need Visual Studio 2013;
-
-(2). Download and install [the latest Metah vsix package](https://github.com/knat/Metah/releases);
-
-(3). Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](../Examples/W/HelloMW);
-
-(4). Delete Program.cs;
-
-(5). Add new item -> Visual C# Items -> Metah.W -> Create a new MW file named FirstLook.mw;
-
-(6). Copy the following code into FirstLook.mw.
+1. You need Visual Studio 2013;
+2. Download and install [the latest Metah vsix package](https://github.com/knat/Metah/releases);
+3. Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](../Examples/W/HelloMW);
+4. Delete Program.cs;
+5. Add new item -> Visual C# Items -> Metah.W -> Create a new MW file named FirstLook.mw;
+6. Copy the following code into FirstLook.mw.
 
 ```C#
 //FirstLook.mw
@@ -1506,7 +1501,8 @@ cancellation-handler:
 'cancel' sequence-statement
 ;
 compensable-statement:
-'compensable' ('explicit'? C#Identifier)? sequence-statement confirmation-handler? compensation-handler? cancellation-handler?
+'compensable' ('explicit'? C#Identifier)?
+sequence-statement confirmation-handler? compensation-handler? cancellation-handler?
 ;
 confirmation-handler:
 'confirm' sequence-statement
@@ -1757,7 +1753,8 @@ ref-content-correlation:
 'contentcorr' C#-expression 'on' C#-expression
 ;
 content-correlation-statement:
-'contentcorr' (C#-identifier | 'explicit' C#-expression) 'on' content-correlation-statement-data (',' content-correlation-statement-data)*
+'contentcorr' (C#-identifier | 'explicit' C#-expression)
+'on' content-correlation-statement-data (',' content-correlation-statement-data)*
 ;
 content-correlation-statement-data:
 '{' C#-expression ',' C#-expression '}'
