@@ -177,7 +177,6 @@ As the preceding code demonstrates, composing activities in C#(/VB) is very verb
 
 (6). Copy the following code into FirstLook.mw.
 
-
 ```C#
 //FirstLook.mw
 using System;
@@ -523,8 +522,8 @@ public interface ISomeInterface
 public class SomeClass<T> where T : class, new() { }
 
 [SomeAttribute1]
-internal sealed activity A1<T>([RequiredArgument]int Arg1, [SomeAttribute2]out T Arg2, ref SomeClass<T> Arg3) as IEnumerable<T>
-    : ISomeInterface where T : class, new()
+internal sealed activity A1<T>([RequiredArgument]int Arg1, [SomeAttribute2]out T Arg2,
+    ref SomeClass<T> Arg3) as IEnumerable<T> : ISomeInterface where T : class, new()
 {
 }
 ##
@@ -692,7 +691,13 @@ variable:
 C#-type-name C#-identifier (',' C#-identifier)* ';'
 ;
 statement:
-csharp-expression-statement | csharp-block-statement | empty-statement | sequence-statement | if-statement | while-statement | do-while-statement | foreach-statement | switch-statement | throw-statement | try-statement | delay-statement | parallel-statement | parallel-foreach-statement | pick-statement | state-machine-statement | flow-statement | transacted-statement | cancellable-statement | compensable-statement | confirm-statement | compensate-statement | persist-statement | no-persist-statement | terminate-statement | receive-statement | send-reply-statement | send-statement | receive-reply-statement | content-correlation-statement | transacted-receive-statement
+csharp-expression-statement | csharp-block-statement | empty-statement | sequence-statement | if-statement 
+| while-statement | do-while-statement | foreach-statement | switch-statement | throw-statement | try-statement 
+| delay-statement | parallel-statement | parallel-foreach-statement | pick-statement | state-machine-statement 
+| flow-statement | transacted-statement | cancellable-statement | compensable-statement | confirm-statement 
+| compensate-statement | persist-statement | no-persist-statement | terminate-statement | receive-statement 
+| send-reply-statement | send-statement | receive-reply-statement | content-correlation-statement 
+| transacted-receive-statement
 ;
 csharp-expression-statement:
 C#-expression-statement
@@ -750,7 +755,8 @@ activity GetDateTime() as DateTime
 Variables are declared just after a `{` and before any statements. You cannot assign a value to it in the declaration. The variable/parameter scoping rules are same as C#: 
 
 ```C#
-activity Demo(int Arg1, bool Arg1/*ERROR: duplicate parameter name*/, int Result/*ERROR: duplicate parameter name*/) as long
+activity Demo(int Arg1, bool Arg1/*ERROR: duplicate parameter name*/,
+    int Result/*ERROR: duplicate parameter name*/) as long
 {
     string Arg1;//ERROR: duplicate variable name
     int i;
@@ -782,40 +788,39 @@ This also means you needn't assign a value to an out parameter.
 
 Authoring an MW activity means composing it from other activities. Every MW statement represents an activity:
 
-<table border="1">
-<tr><th>MW statement</th><th>Activity class</th></tr>
-<tr><td>csharp-expression-statement</td><td>MetahWActionActivity/MetahWSequenceActivity/the invoked activity class</td></tr>
-<tr><td>csharp-block-statement</td><td>MetahWActionActivity</td></tr>
-<tr><td>empty-statement</td><td>MetahWActionActivity</td></tr>
-<tr><td>sequence-statement</td><td>SAS.Sequence</td></tr>
-<tr><td>if-statement</td><td>SAS.If</td></tr>
-<tr><td>while-statement</td><td>SAS.While</td></tr>
-<tr><td>do-while-statement</td><td>SAS.DoWhile</td></tr>
-<tr><td>foreach-statement</td><td>SAS.ForEach&lt;T&gt;</td></tr>
-<tr><td>switch-statement</td><td>SAS.Switch&lt;T&gt;</td></tr>
-<tr><td>throw-statement</td><td>SAS.Throw/Rethrow</td></tr>
-<tr><td>try-statement</td><td>SAS.TryCatch</td></tr>
-<tr><td>delay-statement</td><td>SAS.Delay</td></tr>
-<tr><td>parallel-statement</td><td>SAS.Parallel</td></tr>
-<tr><td>parallel-foreach-statement</td><td>SAS.ParallelForEach&lt;T&gt;</td></tr>
-<tr><td>pick-statement</td><td>SAS.Pick</td></tr>
-<tr><td>state-machine-statement</td><td>SAS.StateMachine</td></tr>
-<tr><td>flow-statement</td><td>SAS.Flowchart</td></tr>
-<tr><td>transacted-statement</td><td>SAS.TransactionScope</td></tr>
-<tr><td>cancellable-statement</td><td>SAS.CancellationScope</td></tr>
-<tr><td>compensable-statement</td><td>SAS.CompensableActivity</td></tr>
-<tr><td>confirm-statement</td><td>SAS.Confirm</td></tr>
-<tr><td>compensate-statement</td><td>SAS.Compensate</td></tr>
-<tr><td>persist-statement</td><td>SAS.Persist</td></tr>
-<tr><td>no-persist-statement</td><td>SAS.NoPersistScope</td></tr>
-<tr><td>terminate-statement</td><td>SAS.TerminateWorkflow</td></tr>
-<tr><td>receive-statement</td><td>SSA.Receive</td></tr>
-<tr><td>send-reply-statement</td><td>SSA.SendReply</td></tr>
-<tr><td>send-statement</td><td>SSA.Send</td></tr>
-<tr><td>receive-reply-statement</td><td>SSA.ReceiveReply</td></tr>
-<tr><td>content-correlation-statement</td><td>SSA.InitializeCorrelation</td></tr>
-<tr><td>transacted-receive-statement</td><td>SSA.TransactedReceiveScope</td></tr>
-</table>
+| MW statement | Activity class |
+| ------------ | -------------- |
+|`csharp-expression-statement`|`MetahWActionActivity`/`MetahWSequenceActivity`/the invoked activity class|
+|`csharp-block-statement`|`MetahWActionActivity`|
+|`empty-statement`|`MetahWActionActivity`|
+|`sequence-statement`|`SAS.Sequence`|
+|`if-statement`|`SAS.If`|
+|`while-statement`|`SAS.While`|
+|`do-while-statement`|`SAS.DoWhile`|
+|`foreach-statement`|`SAS.ForEach<T>`|
+|`switch-statement`|`SAS.Switch<T>`|
+|`throw-statement`|`SAS.Throw/Rethrow`|
+|`try-statement`|`SAS.TryCatch`|
+|`delay-statement`|`SAS.Delay`|
+|`parallel-statement`|`SAS.Parallel`|
+|`parallel-foreach-statement`|`SAS.ParallelForEach<T>`|
+|`pick-statement`|`SAS.Pick`|
+|`state-machine-statement`|`SAS.StateMachine`|
+|`flow-statement`|`SAS.Flowchart`|
+|`transacted-statement`|`SAS.TransactionScope`|
+|`cancellable-statement`|`SAS.CancellationScope`|
+|`compensable-statement`|`SAS.CompensableActivity`|
+|`confirm-statement`|`SAS.Confirm`|
+|`compensate-statement`|`SAS.Compensate`|
+|`persist-statement`|`SAS.Persist`|
+|`no-persist-statement`|`SAS.NoPersistScope`|
+|`terminate-statement`|`SAS.TerminateWorkflow`|
+|`receive-statement`|`SSA.Receive`|
+|`send-reply-statement`|`SSA.SendReply`|
+|`send-statement`|`SSA.Send`|
+|`receive-reply-statement`|`SSA.ReceiveReply`|
+|`content-correlation-statement`|`SSA.InitializeCorrelation`|
+|`transacted-receive-statement`|`SSA.TransactedReceiveScope`|
 
 The MW compier tries to do some optimization: two or more contiguous `csharp-expression-statement`s/`csharp-block-statement`s may be generated as a single `MetahWActionActivity`; if a `sequence-statement` has only one member statement, the `sequence-statement` is discarded and the member statement is used.
 
@@ -941,7 +946,8 @@ activity InvokeActivities(string String, string Count)
 {
     int count;
     char[] chars;
-    if (new TryParse().Invoke(Count, out count) && count > 0 && new GetUpperChars().Invoke(new RepeatString().Invoke(String, count), out chars) > 0)
+    if (new TryParse().Invoke(Count, out count) && count > 0
+        && new GetUpperChars().Invoke(new RepeatString().Invoke(String, count), out chars) > 0)
     ##
     {
         foreach(var ch in chars)
@@ -1412,7 +1418,8 @@ flow-statement-if-node:
 label-clause 'fif' '(' C#-expression ')' flow-statement-jump ('else' flow-statement-jump)?
 ;
 flow-statement-switch-node:
-label-clause 'fswitch' '(' C#-expression ')' '{' flow-statement-switch-node-case* flow-statement-switch-node-default? '}'
+label-clause 'fswitch' '(' C#-expression ')'
+'{' flow-statement-switch-node-case* flow-statement-switch-node-default? '}'
 ;
 flow-statement-switch-node-case:
 'case' C#-expression ':' flow-statement-jump
