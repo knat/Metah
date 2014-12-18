@@ -462,6 +462,7 @@ MW projects extend from C# projects. Any existing C# projects can support MW by 
 
 ```xml
 <Import Project="$([System.IO.Directory]::GetFiles($([System.IO.Path]::Combine($([System.Environment]::GetFolderPath(SpecialFolder.LocalApplicationData)), `Microsoft\VisualStudio\12.0\Extensions`)), `Metah.W.targets`, System.IO.SearchOption.AllDirectories))" />
+
 ```
 
 ![](EditCSProj.png)
