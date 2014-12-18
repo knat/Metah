@@ -60,7 +60,7 @@
     <Compile Include="ClassicToken.cs" />
     <Compile Include="CommonToken.cs" />
     <Compile Include="CommonTokenStream.cs" />
-    <Compile Include="Debug\IDebugEventListener.cs" />
+    <Compile Include="Debug2\IDebugEventListener.cs" />
     <Compile Include="DFA.cs" />
     <Compile Include="EarlyExitException.cs" />
     <Compile Include="FailedPredicateException.cs" />
