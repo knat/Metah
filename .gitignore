@@ -230,5 +230,10 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 
-# Metah.W
+# Metah.W generated file
 *.mw.cs
+
+# Metah.X generated files
+*.mx.cs
+*.mxcs.cs
+Metah.X.cs
