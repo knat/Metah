@@ -165,7 +165,7 @@ activity TryParse(string String, out int Value) as bool
     Result = int.TryParse(String, out Value);
 }
 
-activity RepeatString(String String, int Count) as string
+activity RepeatString(string String, int Count) as string
 {
     ##
     {
