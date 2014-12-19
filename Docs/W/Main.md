@@ -167,7 +167,7 @@ As the preceding code demonstrates, composing activities in C#(/VB) is very verb
 
 1. You need Visual Studio 2013;
 2. Download and install [the latest Metah vsix package](https://github.com/knat/Metah/releases);
-3. Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](../../Examples/W/HelloMW);
+3. Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](../../Examples/W/HelloMW));
 4. Delete Program.cs;
 5. Add new item -> Visual C# Items -> Metah.W -> Create a new MW file named FirstLook.mw;
 6. Copy the following code into FirstLook.mw.
