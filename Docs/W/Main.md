@@ -578,7 +578,7 @@ If an MW activity declares a return type, the activity class inherits from `SA.A
 
 The direction of an MW parameter can be in(default), out(by `out` modifier) or in-out(by `ref` modifier). A same-named public property of type `SA.InArgument<ParaTypeName>`, `SA.OutArgument<ParaTypeName>` or `SA.InOutArgument<ParaTypeName>` is generated from the MW parameter. Bacause of this, it's strongly recommended capitalizing the first letter of the parameter name to comply with .NET conventions.
 
-We can think an MW activity is the syntactic sugar for an activity class. Howerver, the MW compiler adds a conceptual(or fictional) `Invoke` method to the activity class. If an activity declares a return type, the return type of the method is the same as it, otherwise `void`. The parameters of the method are same as the parameters of the activity, and if all the directions are in, every parameter has a default value. From MW metaprogramming's perspectives, the activity classes of `A1<T>` and `A2` are:
+We can think an MW activity is the syntactic sugar for an activity class. Howerver, the MW compiler adds a conceptual(or fictional) `Invoke` method to the activity class. If an activity declares a return type, the return type of the method is the same as it, otherwise `void`. The parameters of the method are same as the parameters of the activity, and if all the directions are in, every parameter has a default value. From MW metaprogramming's perspectives, the activity classes of `A1<T>` and `A2<T>` are:
 
 ```C#
 [SomeAttribute1]
