@@ -1,7 +1,7 @@
 //
-//Metah.X runtime file (Schema-lized Document Object Model(SDOM))
+//Schema-lized Document Object Model(SDOM)
 //DO NOT EDIT unless you know what you are doing
-//Visit http://metah.codeplex.com for more information
+//Visit https://github.com/knat/Metah for more information
 //
 using System;
 using System.Globalization;

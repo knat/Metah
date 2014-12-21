@@ -4226,13 +4226,13 @@ namespace Metah.Compilation {
         }
         internal const string CSBanner = @"//
 //Auto-generated, DO NOT EDIT
-//Visit http://metah.codeplex.com for more information
+//Visit https://github.com/knat/Metah for more information
 //
 ";
         internal const string XmlBanner = @"<?xml version='1.0'?>
 <!--
     Auto-generated, DO NOT EDIT
-    Visit http://metah.codeplex.com for more information
+    Visit https://github.com/knat/Metah for more information
 -->
 ";
         internal static string ToXmlString(this string s) { return System.Security.SecurityElement.Escape(s); }

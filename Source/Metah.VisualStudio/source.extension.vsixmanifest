@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="MetahProgrammingLanguages" Version="0.53" Language="en-US" Publisher="谭克(Tank)" />
+        <Identity Id="MetahProgrammingLanguages" Version="0.54" Language="en-US" Publisher="谭克(Tank)" />
         <DisplayName>Metah Programming Languages</DisplayName>
         <Description xml:space="preserve">Metah.W: A Workflow Metaprogramming Language
 Metah.X: An XML Metaprogramming Language</Description>
-        <MoreInfo>http://metah.codeplex.com</MoreInfo>
+        <MoreInfo>https://github.com/knat/Metah</MoreInfo>
         <License>License.txt</License>
         <Tags>C#-derived Metaprogramming Language, Windows Workflow Foundation 4.5, XML, XML Schema</Tags>
     </Metadata>

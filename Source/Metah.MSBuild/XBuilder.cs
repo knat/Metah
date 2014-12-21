@@ -9,22 +9,24 @@ namespace Metah.MSBuild.X {
     public sealed class MetahXBuilder : BuilderBase {
         public ITaskItem[] XCSharpFiles { get; set; }
         public ITaskItem[] XFiles { get; set; }
-        public bool EmbedRuntime { get; set; }
+        public bool EmbedSDOMSource { get; set; }
         [Output]
         public ITaskItem[] OutputCSharpFiles { get; set; }
         //
         public override bool Execute() {
             var errorStore = new XBuildErrorStore();
             try {
-                if ((XCSharpFiles == null || XCSharpFiles.Length == 0) && (XFiles == null || XFiles.Length == 0)) {
+                var mxFilePath = CopyFile("Metah.X.cs", false);//EmbedSDOMSource);
+                CopyFile("Metah.X.dll", false);
+                if ((XCSharpFiles == null || XCSharpFiles.Length == 0) && (XFiles == null || XFiles.Length == 0))
+                {
                     base.Log.LogMessage(MessageImportance.High, "Skip compilation");
                     return true;
                 }
                 var xCSharpFileList = CreateCompilationInputFileList(XCSharpFiles);
                 var xFileList = CreateCompilationInputFileList(XFiles);
                 var cSharpFileList = CreateCompilationInputFileList(CSharpFiles);
-                var mxFilePath = CopyFile("Metah.X.cs", EmbedRuntime);
-                if (EmbedRuntime) cSharpFileList.Add(new CompilationInputFile(mxFilePath));
+                if (EmbedSDOMSource) cSharpFileList.Add(new CompilationInputFile(mxFilePath));
                 var preprocessorSymbolList = CreatePreprocessorSymbolList();
                 var metadataReferenceList = CreateMetadataReferenceList();
                 var compilationInput = new XCompilationInput(preprocessorSymbolList, cSharpFileList, metadataReferenceList, xCSharpFileList, xFileList);
@@ -32,7 +34,7 @@ namespace Metah.MSBuild.X {
                 foreach (var error in compilationOutput.ErrorList) LogError(error, errorStore);
                 if (compilationOutput.HasErrors) return false;
                 var outputCSharpFileList = new List<TaskItem>();
-                if (EmbedRuntime) outputCSharpFileList.Add(new TaskItem(mxFilePath));
+                if (EmbedSDOMSource) outputCSharpFileList.Add(new TaskItem(mxFilePath));
                 if (compilationOutput.Analyzer != null) {
                     foreach (var compilationUnit in compilationOutput.Analyzer.CompilationUnits) {
                         var filePath = compilationUnit.FilePath + ".cs";

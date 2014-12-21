@@ -5,7 +5,7 @@
     <AvailableItemName Include="MetahX" />
   </ItemGroup>
   <PropertyGroup>
-    <MetahXEmbedRuntime Condition="$(MetahXEmbedRuntime) == ''">false</MetahXEmbedRuntime>
+    <MetahXEmbedSDOMSource Condition="$(MetahXEmbedSDOMSource) == ''">false</MetahXEmbedSDOMSource>
   </PropertyGroup>
   <PropertyGroup>
     <PrepareResourcesDependsOn>
@@ -23,7 +23,7 @@
       MetadataReferences="@(ReferencePath)"
       XCSharpFiles="@(MetahXCSharp)"
       XFiles="@(MetahX)"
-      EmbedRuntime="$(MetahXEmbedRuntime)"
+      EmbedSDOMSource="$(MetahXEmbedSDOMSource)"
       >
       <Output TaskParameter="OutputCSharpFiles" ItemName="Compile" />
     </MetahXBuilder>
