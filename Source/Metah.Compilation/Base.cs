@@ -888,10 +888,10 @@ namespace Metah.Compilation {
             ann = new SyntaxAnnotation();
             return node.WithAdditionalAnnotations(ann);
         }
-        internal static SyntaxNode GetAnnedNode(this SyntaxNode ancestor, SyntaxAnnotation ann) {
+        internal static SyntaxNode TryGetAnnedNode(this SyntaxNode ancestor, SyntaxAnnotation ann) {
             return ancestor.GetAnnotatedNodes(ann).FirstOrDefault();
         }
-        internal static T GetAnnedNode<T>(this SyntaxNode ancestor, SyntaxAnnotation ann) where T : SyntaxNode {
+        internal static T TryGetAnnedNode<T>(this SyntaxNode ancestor, SyntaxAnnotation ann) where T : SyntaxNode {
             return ancestor.GetAnnotatedNodes(ann).FirstOrDefault() as T;
         }
         //

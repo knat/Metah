@@ -343,16 +343,25 @@ namespace Metah.Compilation.X {
                 var isGenerated = csClass.IsGenerated;
                 ClassDeclarationSyntax clsSyntax;
                 if (isFirst) {
+                    SyntaxAnnotation ann;
                     clsSyntax = CS.Class(isGenerated ? new[] { CS.SerializableAttributeList } : csClass.AttributeListList.Append(CS.SerializableAttributeList),
-                        SyntaxFactory.TokenList(GetModifiers()), CSName, isGenerated ? baseNames : baseNames.Concat(csClass.BaseNameList), csClass.MemberList);
+                        SyntaxFactory.TokenList(GetModifiers()), CSName, isGenerated ? baseNames : baseNames.Concat(csClass.BaseNameList), csClass.MemberList)
+                        .SetAnn(out ann);
+                    csClass.SetCSSyntaxAnnotation(ann);
                     isFirst = false;
                 }
-                else clsSyntax = CS.Class(isGenerated ? null : csClass.AttributeListList, CS.PartialTokenList, CSName,
-                    isGenerated ? null : csClass.BaseNameList, csClass.MemberList);
+                else {
+                    clsSyntax = CS.Class(isGenerated ? null : csClass.AttributeListList, CS.PartialTokenList, CSName,
+                        isGenerated ? null : csClass.BaseNameList, csClass.MemberList);
+                }
                 //clsSyntax = clsSyntax.WithAdditionalAnnotations(new CSClassAnnotation(csClass), csClass.Keyword.SourceSpan);
                 if (!parent.TryAddCSClass(csClass.CompilationUnitIndex, csClass.NamespaceIndex, clsSyntax)) {
-                    if (isGenerated) parent.CSPart.MemberList.Add(clsSyntax);
-                    else CompilationContext.Throw(csClass.Keyword, ErrorKind.CannotAddClassToParent);
+                    if (isGenerated) {
+                        parent.CSPart.MemberList.Add(clsSyntax);
+                    }
+                    else {
+                        CompilationContext.Throw(csClass.Keyword, ErrorKind.CannotAddClassToParent);
+                    }
                 }
             }
         }

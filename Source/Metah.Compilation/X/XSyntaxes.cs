@@ -83,6 +83,8 @@ namespace Metah.Compilation.X {
                 }
             }
         }
+        internal readonly List<CSClass> CSClassList = new List<CSClass>();
+        private static readonly CSharpCompilationOptions _compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         internal Analyzer(XAnalyzerInput analyzerInput) {
             if (analyzerInput == null) throw new ArgumentNullException("analyzerInput");
             AnalyzerInput = analyzerInput;
@@ -126,30 +128,41 @@ namespace Metah.Compilation.X {
                         SyntaxFactory.ReturnStatement(CS.NewArrOrNullExpr(CSEX.NamespaceInfoArrayType, ProgramInfo.NamespaceMap.Values.Where(i => !i.IsSystem).Select(i => i.InfoLiteral)))))
             );
 
-            //var csCompilation = CSCompilation.Create("__TEMP__", options: new CompilationOptions(OutputKind.DynamicallyLinkedLibrary),
-            //    syntaxTrees: CompilationUnitList.Select(i => i.CSSyntaxTree).Concat(programInput.CSItemList.Select(i => i.SyntaxTree)),
-            //    references: programInput.CompilationInput.AssemblyFileReferenceList.Select(i => i.MetadataFileReference));
-            //var clsAnnType = typeof(CSClassAnnotation);
-            //foreach (var compilationUnit in CompilationUnitList) {
-            //    var semanticModel = csCompilation.GetSemanticModel(compilationUnit.CSSyntaxTree);
-            //    foreach (var clsSyntax in compilationUnit.CSCompilationUnit.GetAnnotatedNodesAndTokens(clsAnnType).Select(i => (ClassDeclarationSyntax)i)) {
-            //        var namedTypeSymbol = semanticModel.GetDeclaredSymbol(clsSyntax);
-            //        if (!namedTypeSymbol.IsAbstract) {
-            //            var hasParameterlessCtor = false;
-            //            foreach (var ctor in namedTypeSymbol.InstanceConstructors) {
-            //                if (ctor.Parameters.Count == 0) {
-            //                    hasParameterlessCtor = true;
-            //                    break;
-            //                }
-            //            }
-            //            if (!hasParameterlessCtor) {
-            //                var clsAnn = (CSClassAnnotation)clsSyntax.GetAnnotations(clsAnnType).Single();
-            //                Errors.Error(clsAnn.CSClass.Keyword, ErrorKind.ParameterlessCtorRequired);
-            //            }
-            //        }
-            //    }
-            //}
-            //CS.ReportDiagnostics(csCompilation.GetDiagnostics(), programInput.XItemList.Select(i => i.FilePath).Concat(programInput.XSchemaItemList.Select(i => i.FilePath)));
+            var csCompilation = CSharpCompilation.Create(
+                assemblyName: "__TEMP__",
+                options: _compilationOptions,
+                syntaxTrees: CompilationUnitList.Select(i => i.CSSyntaxTree).Concat(AnalyzerInput.CSharpItemList.Select(i => i.SyntaxTree)),
+                references: AnalyzerInput.CompilationInput.MetadataReferenceList
+                );
+            foreach (var compilationUnit in CompilationUnitList) {
+                var cuSyntax = (CompilationUnitSyntax)compilationUnit.CSSyntaxTree.GetRoot();
+                var semanticModel = csCompilation.GetSemanticModel(compilationUnit.CSSyntaxTree);
+                for (var i = 0; i < CSClassList.Count; i++) {
+                    var csClass = CSClassList[i];
+                    if (csClass != null) {
+                        var clsSyntax = cuSyntax.TryGetAnnedNode<ClassDeclarationSyntax>(csClass.CSSyntaxAnnotation);
+                        if (clsSyntax != null) {
+                            var namedTypeSymbol = semanticModel.GetDeclaredSymbol(clsSyntax);
+                            if (!namedTypeSymbol.IsAbstract) {
+                                var hasParameterlessCtor = false;
+                                foreach (var ctor in namedTypeSymbol.InstanceConstructors) {
+                                    if (ctor.Parameters.Length == 0) {
+                                        hasParameterlessCtor = true;
+                                        break;
+                                    }
+                                }
+                                if (!hasParameterlessCtor) {
+                                    CompilationContext.Error(csClass.Keyword, ErrorKind.ParameterlessConstructorRequired);
+                                }
+                            }
+                            CSClassList[i] = null;
+                        }
+                    }
+                }
+            }
+            CompilationContext.ThrowIfHasErrors();
+            CS.ReportDiagnostics(csCompilation.GetDiagnostics(),
+                AnalyzerInput.XItemList.Select(i => i.FilePath).Concat(AnalyzerInput.XCSharpItemList.Select(i => i.FilePath)));
             CompilationContext.ThrowIfHasErrors();
             //
             //var xsdTexts = new Dictionary<string, string>();
@@ -242,6 +255,7 @@ namespace Metah.Compilation.X {
     public sealed class CSClass : CSPart {
         internal CSClass(Object parent, Node node, SimpleToken keyword)
             : base(parent.CompilationUnitAncestor.Index, parent.NamespaceAncestor.Index) {
+            Parent = parent;
             if (node == null || node.IsNull) {
                 IsGenerated = true;
                 Keyword = keyword;
@@ -256,6 +270,7 @@ namespace Metah.Compilation.X {
                 CreateSyntax(MemberList, node.Member("Members"), false);
             }
         }
+        internal readonly Object Parent;
         internal readonly bool IsGenerated;
         internal readonly SimpleToken Keyword;//'##' token
         internal readonly Identifier AliasId;
@@ -265,11 +280,12 @@ namespace Metah.Compilation.X {
         internal List<NameSyntax> BaseNameList { get { return _baseNameList ?? (_baseNameList = new List<NameSyntax>()); } }
         internal CSClass MergeTo(CSClass other) { return (CSClass)base.MergeTo(other); }
         new internal CSClass Clone() { return (CSClass)base.Clone(); }
+        internal SyntaxAnnotation CSSyntaxAnnotation { get; private set; }//opt
+        internal void SetCSSyntaxAnnotation(SyntaxAnnotation ann) {
+            CSSyntaxAnnotation = ann;
+            Parent.AnalyzerAncestor.CSClassList.Add(this);
+        }
     }
-    //public sealed class CSClassAnnotation : SyntaxAnnotation {
-    //    internal CSClassAnnotation(CSClass csClass) { CSClass = csClass; }
-    //    internal readonly CSClass CSClass;
-    //}
     //
     //
     public sealed class CompilationUnit : Object {
@@ -297,7 +313,8 @@ namespace Metah.Compilation.X {
         internal CompilationUnitSyntax CSCompilationUnit {
             get {
                 return _csCompilationUnit ?? (_csCompilationUnit = SyntaxFactory.CompilationUnit(SyntaxFactory.List<ExternAliasDirectiveSyntax>(CSExternList),
-                    SyntaxFactory.List<UsingDirectiveSyntax>(CSUsingList), SyntaxFactory.List<AttributeListSyntax>(CSAttributeListList), SyntaxFactory.List<MemberDeclarationSyntax>(CSMemberList)));
+                    SyntaxFactory.List<UsingDirectiveSyntax>(CSUsingList), SyntaxFactory.List<AttributeListSyntax>(CSAttributeListList),
+                    SyntaxFactory.List<MemberDeclarationSyntax>(CSMemberList)));
             }
         }
         private SyntaxTree _csSyntaxTree;

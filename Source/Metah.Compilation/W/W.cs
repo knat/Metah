@@ -420,7 +420,7 @@ namespace Metah.Compilation.W {
             //>}
             var getImplStmList = new List<StatementSyntax>();
             getImplStmList.Add(CS.LocalDeclStm(CSEX.ActivityName, "__vroot__"));
-            var ctx = new SemanticContext(cuSyntax.GetAnnedNode(_modelBodyAnn), semanticModel);
+            var ctx = new SemanticContext(cuSyntax.TryGetAnnedNode(_modelBodyAnn), semanticModel);
             if (_serviceOperationList != null) {
                 foreach (var request in _serviceOperationList.OfType<RequestServiceOperation>()) {
                     request.PreGetImpl(ctx, getImplStmList);
@@ -1147,10 +1147,10 @@ namespace Metah.Compilation.W {
         internal readonly SyntaxNode Ancestor;
         internal readonly SemanticModel SemanticModel;
         internal ExpressionSyntax GetExpr(SyntaxAnnotation ann) {
-            return Ancestor.GetAnnedNode<ExpressionSyntax>(ann);
+            return Ancestor.TryGetAnnedNode<ExpressionSyntax>(ann);
         }
         internal SyntaxNode GetNode(SyntaxAnnotation ann) {
-            return Ancestor.GetAnnedNode(ann);
+            return Ancestor.TryGetAnnedNode(ann);
         }
     }
     public delegate StatementSyntax ExprToStm(ExpressionSyntax expr);
