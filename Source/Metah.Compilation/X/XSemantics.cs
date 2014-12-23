@@ -343,11 +343,13 @@ namespace Metah.Compilation.X {
                 var isGenerated = csClass.IsGenerated;
                 ClassDeclarationSyntax clsSyntax;
                 if (isFirst) {
-                    SyntaxAnnotation ann;
                     clsSyntax = CS.Class(isGenerated ? new[] { CS.SerializableAttributeList } : csClass.AttributeListList.Append(CS.SerializableAttributeList),
-                        SyntaxFactory.TokenList(GetModifiers()), CSName, isGenerated ? baseNames : baseNames.Concat(csClass.BaseNameList), csClass.MemberList)
-                        .SetAnn(out ann);
-                    csClass.SetCSSyntaxAnnotation(ann);
+                        SyntaxFactory.TokenList(GetModifiers()), CSName, isGenerated ? baseNames : baseNames.Concat(csClass.BaseNameList), csClass.MemberList);
+                    if (!IsCSAbstract) {
+                        SyntaxAnnotation ann;
+                        clsSyntax = clsSyntax.SetAnn(out ann);
+                        csClass.SetCSSyntaxAnnotation(ann);
+                    }
                     isFirst = false;
                 }
                 else {

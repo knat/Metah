@@ -2416,6 +2416,15 @@ namespace Metah.Compilation {
             }
             return pSymbolList;
         }
+        internal static bool HasParameterlessConstructor(this INamedTypeSymbol symbol) {
+            if (symbol == null) throw new ArgumentNullException("symbol");
+            foreach (var ctor in symbol.InstanceConstructors) {
+                if (ctor.Parameters.Length == 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
         //
         //
         //
