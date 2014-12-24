@@ -198,21 +198,21 @@ namespace Metah.Compilation.X {
         //>public override ObjectInfo ObjectInfo { get { return ThisInfo; } }
         internal static PropertyDeclarationSyntax ObjectInfoProperty() {
             return CS.Property(CS.PublicOverrideTokenList, ObjectInfoName, "ObjectInfo", true,
-                default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.IdName("ThisInfo")) });
+                default(SyntaxTokenList), new[] { CS.ReturnStm(CS.IdName("ThisInfo")) });
         }
         //>VALUETYPE r; SimpleType.TryGetTypedValue(VALUEEXP, out r); return r;
         internal static StatementSyntax[] TryGetTypedValueStatements(TypeSyntax valueType, ExpressionSyntax valueExp) {
             return new StatementSyntax[] {
                 CS.LocalDeclStm(valueType, "r"),
                 SyntaxFactory.ExpressionStatement(CS.InvoExpr(TryGetTypedValueExp, SyntaxFactory.Argument(valueExp), CS.OutArgument("r"))),
-                SyntaxFactory.ReturnStatement(CS.IdName("r")) };
+                CS.ReturnStm(CS.IdName("r")) };
         }
         //>var obj = OBJECT; if(obj == null) return null; return obj.MEMBER;
         internal static StatementSyntax[] ObjectMemberOrNullStatements(ExpressionSyntax objExp, string memberName) {
             return new StatementSyntax[] { 
                 CS.LocalDeclStm(CS.VarIdName, "obj", objExp),
-                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("obj"), CS.NullLiteral), SyntaxFactory.ReturnStatement(CS.NullLiteral)),
-                SyntaxFactory.ReturnStatement(CS.MemberAccessExpr(CS.IdName("obj"), memberName)) 
+                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("obj"), CS.NullLiteral), CS.ReturnStm(CS.NullLiteral)),
+                CS.ReturnStm(CS.MemberAccessExpr(CS.IdName("obj"), memberName)) 
             };
         }
         //>MODIFIERS IEnumerator<T> GetEnumerator() {
@@ -229,18 +229,18 @@ namespace Metah.Compilation.X {
         ////System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return GetEnumerator(); }
         //internal static MethodDeclarationSyntax NonGenericGetEnumeratorMethod() {
         //    return CS.Method(default(SyntaxTokenList), CS.IEnumeratorName, "GetEnumerator", null,
-        //              SyntaxFactory.ReturnStatement(CS.Invocation(CS.IdName("GetEnumerator")))).
+        //              CS.ReturnStm(CS.Invocation(CS.IdName("GetEnumerator")))).
         //              WithExplicitInterfaceSpecifier(SyntaxFactory.ExplicitInterfaceSpecifier(CS.IEnumerableName));
         //}
         internal static IEnumerable<MemberDeclarationSyntax> IListOverrideMembers(TypeSyntax itemType) {
             //>public bool Contains(TYPE item) { return base.Contains(item); }
             yield return CS.Method(CS.PublicTokenList, CS.BoolType, "Contains",
                 new[] { CS.Parameter(itemType, "item") },
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr("Contains"), CS.IdName("item"))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr("Contains"), CS.IdName("item"))));
             //>public int IndexOf(TYPE item) { return base.IndexOf(item); }
             yield return CS.Method(CS.PublicTokenList, CS.IntType, "IndexOf",
                 new[] { CS.Parameter(itemType, "item") },
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr("IndexOf"), CS.IdName("item"))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr("IndexOf"), CS.IdName("item"))));
             //>public void Add(TYPE item) { base.Add(item); }
             yield return CS.Method(CS.PublicTokenList, CS.VoidType, "Add",
                 new[] { CS.Parameter(itemType, "item") },
@@ -254,12 +254,12 @@ namespace Metah.Compilation.X {
             //>    set { base[index] = value; }
             //>}
             yield return CS.Indexer(CS.NewPublicTokenList, itemType, new[] { CS.Parameter(CS.IntType, "index") }, false,
-                default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseElementAccessExpr(CS.IdName("index")), itemType)) },
+                default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseElementAccessExpr(CS.IdName("index")), itemType)) },
                 default(SyntaxTokenList), new[] { SyntaxFactory.ExpressionStatement(CS.AssignExpr(CS.BaseElementAccessExpr(CS.IdName("index")), CS.IdName("value"))) });
             //>public bool Remove(TYPE item) { return base.Remove(item); }
             yield return CS.Method(CS.PublicTokenList, CS.BoolType, "Remove",
                 new[] { CS.Parameter(itemType, "item") },
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr("Remove"), CS.IdName("item"))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr("Remove"), CS.IdName("item"))));
             //>public void CopyTo(TYPE[] array, int arrayIndex) { Extensions.CopyTo(this, array, arrayIndex); }
             yield return CS.Method(CS.PublicTokenList, CS.VoidType, "CopyTo",
                 new[] { CS.Parameter(CS.OneDimArrayType(itemType), "array"), CS.Parameter(CS.IntType, "arrayIndex") },
@@ -268,11 +268,11 @@ namespace Metah.Compilation.X {
             yield return GetEnumeratorMethod(CS.NewPublicTokenList, itemType, SyntaxFactory.BaseExpression());
             //>System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return GetEnumerator(); }
             yield return CS.Method(default(SyntaxTokenList), CS.IEnumeratorName, "GetEnumerator", null,
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.IdName("GetEnumerator")))).
+                CS.ReturnStm(CS.InvoExpr(CS.IdName("GetEnumerator")))).
                 WithExplicitInterfaceSpecifier(SyntaxFactory.ExplicitInterfaceSpecifier(CS.IEnumerableName));
             //>bool System.Collections.Generic.ICollection<T>.IsReadOnly { get { return false; } }
             yield return CS.Property(default(SyntaxTokenList), CS.BoolType, "IsReadOnly", true,
-                default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.FalseLiteral) }).
+                default(SyntaxTokenList), new[] { CS.ReturnStm(CS.FalseLiteral) }).
                     WithExplicitInterfaceSpecifier(SyntaxFactory.ExplicitInterfaceSpecifier(CS.ICollectionOf(itemType)));
         }
     }
@@ -323,11 +323,13 @@ namespace Metah.Compilation.X {
             Object.AnalyzerAncestor.AddClassAlias((CSClass)CSPart, CSFullName);
             //private static CSFullName AsThis(object o){return o as CSFullName;}
             AddCSMember(CS.Method(CS.PrivateStaticTokenList, CSFullName, "AsThis", new[] { CS.Parameter(CS.ObjectType, "o") },
-                SyntaxFactory.ReturnStatement(CS.AsExpr(CS.IdName("o"), CSFullName))));
+                CS.ReturnStm(CS.AsExpr(CS.IdName("o"), CSFullName))));
             return parent;
         }
         internal void AddCSMember(MemberDeclarationSyntax member) { CSPart.MemberList.Add(member); }
         internal void AddCSMembers(IEnumerable<MemberDeclarationSyntax> members) { CSPart.MemberList.AddRange(members); }
+        private CSMemberList _additionalCSMemberList;
+        internal CSMemberList AdditionalCSMemberList { get { return _additionalCSMemberList ?? (_additionalCSMemberList = new CSMemberList()); } }
         protected void CreateAndAddCSClass(NameSyntax baseName, ObjectInfo parent) { CreateAndAddCSClass(new[] { baseName }, parent); }
         private IEnumerable<SyntaxToken> GetModifiers() {
             if (IsCSClassOverride) yield return CS.NewToken;
@@ -657,8 +659,8 @@ namespace Metah.Compilation.X {
             //  return new CLASS{Value=value};
             //}
             AddCSMember(CS.ConversionOperator(true, CSFullName, new[] { CS.Parameter(NullableValueCSFullName, "value") },
-                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral), SyntaxFactory.ReturnStatement(CS.NullLiteral)),
-                SyntaxFactory.ReturnStatement(CS.NewObjExpr(CSFullName, null, new[] { CS.AssignExpr(CS.IdName("Value"), CS.IdName("value")) }))));
+                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral), CS.ReturnStm(CS.NullLiteral)),
+                CS.ReturnStm(CS.NewObjExpr(CSFullName, null, new[] { CS.AssignExpr(CS.IdName("Value"), CS.IdName("value")) }))));
             //new public static readonly AtomicSimpleTypeInfo ThisInfo = new AtomicSimpleTypeInfo(clrType, kind, name, baseType, valueClrType, facetSet);
             AddCSMember(CS.Field(CS.NewPublicStaticReadOnlyTokenList, CSEX.AtomicSimpleTypeInfoName, "ThisInfo",
                 CS.NewObjExpr(CSEX.AtomicSimpleTypeInfoName, SyntaxFactory.TypeOfExpression(CSFullName), CSEX.Literal(baseType.Kind), CS.Literal(Name),
@@ -691,8 +693,8 @@ namespace Metah.Compilation.X {
             //  return new CLASS{Value=value};
             //}
             AddCSMember(CS.ConversionOperator(true, CSFullName, new[] { CS.Parameter(CSEX.ListedSimpleTypeValueName, "value") },
-                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral), SyntaxFactory.ReturnStatement(CS.NullLiteral)),
-                SyntaxFactory.ReturnStatement(CS.NewObjExpr(CSFullName, null, new[] { CS.AssignExpr(CS.IdName("Value"), CS.IdName("value")) }))));
+                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral), CS.ReturnStm(CS.NullLiteral)),
+                CS.ReturnStm(CS.NewObjExpr(CSFullName, null, new[] { CS.AssignExpr(CS.IdName("Value"), CS.IdName("value")) }))));
             NameSyntax baseClassFullName;
             if (IsRestricting) {
                 BaseType.GenerateCS(parent);
@@ -762,8 +764,8 @@ namespace Metah.Compilation.X {
             //  return new CLASS{Value=value};
             //}
             AddCSMember(CS.ConversionOperator(true, CSFullName, new[] { CS.Parameter(CSEX.UnitedSimpleTypeValueName, "value") },
-                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral), SyntaxFactory.ReturnStatement(CS.NullLiteral)),
-                SyntaxFactory.ReturnStatement(CS.NewObjExpr(CSFullName, null, new[] { CS.AssignExpr(CS.IdName("Value"), CS.IdName("value")) }))));
+                SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral), CS.ReturnStm(CS.NullLiteral)),
+                CS.ReturnStm(CS.NewObjExpr(CSFullName, null, new[] { CS.AssignExpr(CS.IdName("Value"), CS.IdName("value")) }))));
             NameSyntax baseClassFullName;
             if (IsRestricting) {
                 BaseType.GenerateCS(parent);
@@ -827,11 +829,11 @@ namespace Metah.Compilation.X {
                     //    set { base.GenericSimpleChild = value; }
                     //}
                     AddCSMember(CS.Property(CS.NewPublicTokenList, SimpleChild.CSFullName, "SimpleChild", false,
-                        default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericSimpleChild"), SimpleChild.CSFullName)) },
+                        default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericSimpleChild"), SimpleChild.CSFullName)) },
                         default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericSimpleChild"), CS.IdName("value")) }));
                     //new public CLASS EnsureSimpleChild() { return base.EnsureSimpleChild<CLASS>(); }
                     AddCSMember(CS.Method(hasComplexTypeBase ? CS.NewPublicTokenList : CS.PublicTokenList, SimpleChild.CSFullName, "EnsureSimpleChild", null,
-                        SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureSimpleChild", SimpleChild.CSFullName))))));
+                        CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureSimpleChild", SimpleChild.CSFullName))))));
                     //new public VALUE Value {
                     //    get { var obj = SimpleChild; if(obj == null) return null; return obj.Value;}
                     //    set { EnsureSimpleChild().Value = value; }
@@ -913,11 +915,12 @@ namespace Metah.Compilation.X {
             //    set { base.GenericAttributeSet = value; }
             //}
             parent.AddCSMember(CS.Property(CS.NewPublicTokenList, CSFullName, "AttributeSet", false,
-                default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericAttributeSet"), CSFullName)) },
+                default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericAttributeSet"), CSFullName)) },
                 default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericAttributeSet"), CS.IdName("value")) }));
             //new public CLASS EnsureAttributeSet() { return base.EnsureAttributeSet<CLASS>(); }
             parent.AddCSMember(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "EnsureAttributeSet", null,
-               SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureAttributeSet", CSFullName))))));
+               CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureAttributeSet", CSFullName))))));
+            parent.AddCSMembers(AdditionalCSMemberList);
             return parent;
         }
     }
@@ -973,16 +976,16 @@ namespace Metah.Compilation.X {
             if (isRef) {
                 //new public REFATT ReferentialAttribute { get{return base.GenericReferentialAttribute as REFATT;} set{base.GenericReferentialAttribute=value;}} 
                 AddCSMember(CS.Property(CS.NewPublicTokenList, ReferentialAttribute.CSFullName, "ReferentialAttribute", false,
-                    default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericReferentialAttribute"), ReferentialAttribute.CSFullName)) },
+                    default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericReferentialAttribute"), ReferentialAttribute.CSFullName)) },
                     default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericReferentialAttribute"), CS.IdName("value")) }));
             }
             //new public TYPE Type { get{return base.GenericType as TYPE;} set{base.GenericType=value;}} 
             AddCSMember(CS.Property(CS.NewPublicTokenList, type.CSFullName, "Type", false,
-                default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericType"), type.CSFullName)) },
+                default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericType"), type.CSFullName)) },
                 default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericType"), CS.IdName("value")) }));
             //new public TYPE EnsureType(){return base.EnsureType<TYPE>();}
             AddCSMember(CS.Method(CS.NewPublicTokenList, type.CSFullName, "EnsureType", null,
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureType", type.CSFullName))))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureType", type.CSFullName))))));
             //new public VALUE Value {
             //    get { var obj = Type; if(obj == null) return null; return obj.Value; }
             //    set { EnsureType().Value = value; }
@@ -994,7 +997,7 @@ namespace Metah.Compilation.X {
                 //public static readonly XName ThisName = XName.Get("", "");
                 AddCSMember(CS.Field(CS.PublicStaticReadOnlyTokenList, CS.XNameName, "ThisName", CS.Literal(Name)));
                 //protected override XName GetName() { return ThisName; }
-                AddCSMember(CS.Method(CS.ProtectedOverrideTokenList, CS.XNameName, "GetName", null, SyntaxFactory.ReturnStatement(CS.IdName("ThisName"))));
+                AddCSMember(CS.Method(CS.ProtectedOverrideTokenList, CS.XNameName, "GetName", null, CS.ReturnStm(CS.IdName("ThisName"))));
             }
             if (isRef) {
                 //public static readonly AttributeInfo ThisInfo = new AttributeInfo(clrType, referentialAttribute, memberName, isOptional, defaultOrFixedValue);
@@ -1019,24 +1022,60 @@ namespace Metah.Compilation.X {
                 //  set{if (value == null) base.Remove(ATTCLS.ThisName); else base.AddOrSet(value);}
                 //}
                 parent.AddCSMember(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, MemberNameId.Value, false,
-                    default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.InvoExpr(CS.BaseMemberAccessExpr("TryGet"), CS.MemberAccessExpr(CSFullExp, "ThisName")), CSFullName)) },
+                    default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.InvoExpr(CS.BaseMemberAccessExpr("TryGet"), CS.MemberAccessExpr(CSFullExp, "ThisName")), CSFullName)) },
                     default(SyntaxTokenList), new StatementSyntax[] {
                         SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral),
                             SyntaxFactory.ExpressionStatement(CS.InvoExpr(CS.BaseMemberAccessExpr("Remove"), CS.MemberAccessExpr(CSFullExp, "ThisName"))),
                             SyntaxFactory.ElseClause(SyntaxFactory.ExpressionStatement(CS.InvoExpr(CS.BaseMemberAccessExpr("AddOrSet"), CS.IdName("value"))))) 
                     }));
+                //grandpa
+                //public ATTCLS A_ATTNAME {
+                //    get { var obj = AttributeSet; if(obj == null) return null; return obj.ATTNAME; }
+                //    set { EnsureAttributeSet().ATTNAME = value; }
+                //}
+                parent.AdditionalCSMemberList.Add(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "A_" + MemberNameId.PlainValue, false,
+                    default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName("AttributeSet"), MemberNameId.Value),
+                    default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureAttributeSet")), MemberNameId.Value), CS.IdName("value")) }));
+
                 //public ATTCLS Ensure_ATTNAME(bool @try = false){return ATTNAME ?? (ATTNAME = base.CreateAttribute<ATTCLS>(ATTCLS.ThisName, @try));}
                 parent.AddCSMember(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "Ensure_" + MemberNameId.PlainValue, new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
-                    SyntaxFactory.ReturnStatement(CS.CoalesceExpr(CS.IdName(MemberNameId.Value),
+                    CS.ReturnStm(CS.CoalesceExpr(CS.IdName(MemberNameId.Value),
                         SyntaxFactory.ParenthesizedExpression(CS.AssignExpr(CS.IdName(MemberNameId.Value),
                             CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("CreateAttribute", CSFullName)), CS.MemberAccessExpr(CSFullExp, "ThisName"), CS.IdName("@try"))))))));
-                //public VALUE ATTNAME_Value {
+                //grandpa
+                //public ATTCLS EnsureA_ATTNAME(bool @try = false){return EnsureAttributeSet().Ensure_ATTNAME(@try);}
+                parent.AdditionalCSMemberList.Add(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "EnsureA_" + MemberNameId.PlainValue, new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
+                    CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureAttributeSet")), "Ensure_" + MemberNameId.PlainValue), CS.IdName("@try")))));
+                //public TYPE T_ATTNAME {
+                //    get { var obj = ATTNAME; if(obj == null) return null; return obj.Type; }
+                //    set { Ensure_ATTNAME().Type = value; }
+                //}
+                parent.AddCSMember(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.CSFullName, "T_" + MemberNameId.PlainValue, false,
+                    default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName(MemberNameId.Value), "Type"),
+                    default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("Ensure_" + MemberNameId.PlainValue)), "Type"), CS.IdName("value")) }));
+                //public VALUE V_ATTNAME {
                 //    get { var obj = ATTNAME; if(obj == null) return null; return obj.Value; }
                 //    set { Ensure_ATTNAME().Value = value; }
                 //}
-                parent.AddCSMember(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.NullableValueCSFullName, MemberNameId.Value + "_Value", false,
+                parent.AddCSMember(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.NullableValueCSFullName, "V_" + MemberNameId.PlainValue, false,
                     default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName(MemberNameId.Value), "Value"),
                     default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("Ensure_" + MemberNameId.PlainValue)), "Value"), CS.IdName("value")) }));
+                //grandpa
+                //public TYPE AT_ATTNAME {
+                //    get { var obj = A_ATTNAME; if(obj == null) return null; return obj.Type; }
+                //    set { EnsureA_ATTNAME().Type = value; }
+                //}
+                parent.AdditionalCSMemberList.Add(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.CSFullName, "AT_" + MemberNameId.PlainValue, false,
+                    default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName("A_" + MemberNameId.PlainValue), "Type"),
+                    default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureA_" + MemberNameId.PlainValue)), "Type"), CS.IdName("value")) }));
+                //grandpa
+                //public VALUE AV_ATTNAME {
+                //    get { var obj = A_ATTNAME; if(obj == null) return null; return obj.Value; }
+                //    set { EnsureA_ATTNAME().Value = value; }
+                //}
+                parent.AdditionalCSMemberList.Add(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.NullableValueCSFullName, "AV_" + MemberNameId.PlainValue, false,
+                    default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName("A_" + MemberNameId.PlainValue), "Value"),
+                    default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureA_" + MemberNameId.PlainValue)), "Value"), CS.IdName("value")) }));
             }
             return parent;
         }
@@ -1078,7 +1117,7 @@ namespace Metah.Compilation.X {
                     AddCSMember(CS.Field(CS.PublicConstTokenList, CS.IntType, "ThisOrder", CS.Literal(Order)));
                     //public override int ChildOrder { get { return ThisOrder(or 0 for choice); } }
                     AddCSMember(CS.Property(CS.PublicOverrideTokenList, CS.IntType, "ChildOrder", true, default(SyntaxTokenList),
-                        new[] { SyntaxFactory.ReturnStatement(IsChoiceMember ? (ExpressionSyntax)CS.Literal(0) : CS.IdName("ThisOrder")) }));
+                        new[] { CS.ReturnStm(IsChoiceMember ? (ExpressionSyntax)CS.Literal(0) : CS.IdName("ThisOrder")) }));
                     if (IsUnorderedMember) {
                         //private int? _specifiedOrder;
                         AddCSMember(CS.Field(CS.PrivateTokenList, CS.IntNullableType, "_specifiedOrder"));
@@ -1092,8 +1131,8 @@ namespace Metah.Compilation.X {
                         AddCSMember(CS.Property(CS.PublicOverrideTokenList, CS.IntType, "SpecifiedOrder", false,
                            default(SyntaxTokenList), new StatementSyntax[] { 
                                 SyntaxFactory.IfStatement(CS.NotEqualsExpr(CS.IdName("_specifiedOrder"), CS.NullLiteral),
-                                    SyntaxFactory.ReturnStatement(CS.MemberAccessExpr(CS.IdName("_specifiedOrder"), "Value"))),
-                                SyntaxFactory.ReturnStatement(CS.IdName("ThisOrder"))
+                                    CS.ReturnStm(CS.MemberAccessExpr(CS.IdName("_specifiedOrder"), "Value"))),
+                                CS.ReturnStm(CS.IdName("ThisOrder"))
                            },
                            default(SyntaxTokenList), new[] { CS.AssignStm(CS.IdName("_specifiedOrder"), CS.IdName("value")) }));
                     }
@@ -1103,7 +1142,7 @@ namespace Metah.Compilation.X {
                 //    set { if (value == null) base.Remove(CHILDCLS.ThisOrder(or 0 for choice)); else base.AddOrSet(value); }
                 //}
                 parent.AddCSMember(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, MemberNameId.Value, false,
-                    default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.InvoExpr(CS.BaseMemberAccessExpr("TryGet"),
+                    default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.InvoExpr(CS.BaseMemberAccessExpr("TryGet"),
                         IsChoiceMember ? (ExpressionSyntax)CS.Literal(0) : CS.MemberAccessExpr(CSFullExp, "ThisOrder")), CSFullName)) },
                     default(SyntaxTokenList), new StatementSyntax[] {
                         SyntaxFactory.IfStatement(CS.EqualsExpr(CS.IdName("value"), CS.NullLiteral),
@@ -1113,9 +1152,25 @@ namespace Metah.Compilation.X {
                     }));
                 //public CHILDCLS Ensure_CHILDNAME(bool @try = false) { return CHILDNAME ?? (CHILDNAME = base.CreateChildMember<CHILDCLS>(CHILDCLS.ThisOrder, @try)); }
                 parent.AddCSMember(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "Ensure_" + MemberNameId.PlainValue, new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
-                    SyntaxFactory.ReturnStatement(CS.CoalesceExpr(CS.IdName(MemberNameId.Value),
+                    CS.ReturnStm(CS.CoalesceExpr(CS.IdName(MemberNameId.Value),
                         SyntaxFactory.ParenthesizedExpression(CS.AssignExpr(CS.IdName(MemberNameId.Value),
                             CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("CreateChildMember", CSFullName)), CS.MemberAccessExpr(CSFullExp, "ThisOrder"), CS.IdName("@try"))))))));
+                var parentChildStruct = parent as ChildStructInfo;
+                if (parentChildStruct != null && parentChildStruct.IsRoot) {
+                    //grandpa
+                    //public CHILDCLS C_CHILDNAME {
+                    //    get { var obj = ComplexChild; if(obj == null) return null; return obj.CHILDNAME; }
+                    //    set { EnsureComplexChild().CHILDNAME = value; }
+                    //}
+                    parent.AdditionalCSMemberList.Add(CS.Property(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "C_" + MemberNameId.PlainValue, false,
+                        default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName("ComplexChild"), MemberNameId.Value),
+                        default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureComplexChild")), MemberNameId.Value), CS.IdName("value")) }));
+                    //grandpa
+                    //public CHILDCLS EnsureC_CHILDNAME(bool @try = false){return EnsureComplexChild().Ensure_CHILDNAME(@try);}
+                    parent.AdditionalCSMemberList.Add(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "EnsureC_" + MemberNameId.PlainValue, new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
+                        CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureComplexChild")), "Ensure_" + MemberNameId.PlainValue), CS.IdName("@try")))));
+
+                }
             }
             return parent;
         }
@@ -1234,16 +1289,36 @@ namespace Metah.Compilation.X {
             if (isRef) {
                 //new public REFELE ReferentialElement { get{return base.GenericReferentialElement as REFELE;} set{base.GenericReferentialElement=value;}} 
                 AddCSMember(CS.Property(CS.NewPublicTokenList, ReferentialElement.CSFullName, "ReferentialElement", false,
-                    default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericReferentialElement"), ReferentialElement.CSFullName)) },
+                    default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericReferentialElement"), ReferentialElement.CSFullName)) },
                     default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericReferentialElement"), CS.IdName("value")) }));
             }
             //new public TYPE Type { get{return base.GenericType as TYPE;} set{base.GenericType=value;}}
             AddCSMember(CS.Property(CS.NewPublicTokenList, type.CSFullName, "Type", false,
-                default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericType"), type.CSFullName)) },
+                default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericType"), type.CSFullName)) },
                 default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericType"), CS.IdName("value")) }));
             //new public TYPE EnsureType(bool @try = false){return base.EnsureType<TYPE>(@try);}
             AddCSMember(CS.Method(CS.NewPublicTokenList, type.CSFullName, "EnsureType", new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureType", type.CSFullName)), CS.IdName("@try")))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureType", type.CSFullName)), CS.IdName("@try")))));
+            if (Order != -1) {
+                //public TYPE T_CHILDNAME {
+                //    get { var obj = CHILDNAME; if(obj == null) return null; return obj.Type; }
+                //    set { Ensure_CHILDNAME().Type = value; }
+                //}
+                parent.AddCSMember(CS.Property(hasElementBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.CSFullName, "T_" + MemberNameId.PlainValue, false,
+                    default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName(MemberNameId.Value), "Type"),
+                    default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("Ensure_" + MemberNameId.PlainValue)), "Type"), CS.IdName("value")) }));
+                var parentChildStruct = parent as ChildStructInfo;
+                if (parentChildStruct != null && parentChildStruct.IsRoot) {
+                    //grandpa
+                    //public TYPE CT_CHILDNAME {
+                    //    get { var obj = C_CHILDNAME; if(obj == null) return null; return obj.Type; }
+                    //    set { EnsureC_CHILDNAME().Type = value; }
+                    //}
+                    parent.AdditionalCSMemberList.Add(CS.Property(hasElementBase ? CS.NewPublicTokenList : CS.PublicTokenList, type.CSFullName, "CT_" + MemberNameId.PlainValue, false,
+                        default(SyntaxTokenList), CSEX.ObjectMemberOrNullStatements(CS.IdName("C_" + MemberNameId.PlainValue), "Type"),
+                        default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureC_" + MemberNameId.PlainValue)), "Type"), CS.IdName("value")) }));
+                }
+            }
             var complexType = type as ComplexTypeInfo;
             if (complexType != null) {
                 if (complexType.AttributeSet != null) {
@@ -1252,11 +1327,11 @@ namespace Metah.Compilation.X {
                     //    set { EnsureType().AttributeSet = value; }
                     //}
                     AddCSMember(CS.Property(CS.NewPublicTokenList, complexType.AttributeSet.CSFullName, "AttributeSet", false,
-                        default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericAttributeSet"), complexType.AttributeSet.CSFullName)) },
+                        default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericAttributeSet"), complexType.AttributeSet.CSFullName)) },
                         default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType")), "AttributeSet"), CS.IdName("value")) }));
                     //new public CLASS EnsureAttributeSet(bool @try = false) { return EnsureType(@try).EnsureAttributeSet(); }
                     AddCSMember(CS.Method(CS.NewPublicTokenList, complexType.AttributeSet.CSFullName, "EnsureAttributeSet", new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
-                       SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType"), CS.IdName("@try")), "EnsureAttributeSet")))));
+                       CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType"), CS.IdName("@try")), "EnsureAttributeSet")))));
                 }
                 if (complexType.ComplexChild != null) {
                     //new public CLASS ComplexChild {
@@ -1264,11 +1339,11 @@ namespace Metah.Compilation.X {
                     //    set { EnsureType().ComplexChild = value; }
                     //}
                     AddCSMember(CS.Property(CS.NewPublicTokenList, complexType.ComplexChild.CSFullName, "ComplexChild", false,
-                        default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericComplexChild"), complexType.ComplexChild.CSFullName)) },
+                        default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericComplexChild"), complexType.ComplexChild.CSFullName)) },
                         default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType")), "ComplexChild"), CS.IdName("value")) }));
                     //new public CLASS EnsureComplexChild(bool @try = false) { return EnsureType(@try).EnsureComplexChild(); }
                     AddCSMember(CS.Method(CS.NewPublicTokenList, complexType.ComplexChild.CSFullName, "EnsureComplexChild", new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
-                       SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType"), CS.IdName("@try")), "EnsureComplexChild")))));
+                       CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType"), CS.IdName("@try")), "EnsureComplexChild")))));
                 }
                 else if (complexType.SimpleChild != null) {
                     //new public CLASS SimpleChild {
@@ -1276,11 +1351,11 @@ namespace Metah.Compilation.X {
                     //    set { EnsureType().SimpleChild = value; }
                     //}
                     AddCSMember(CS.Property(CS.NewPublicTokenList, complexType.SimpleChild.CSFullName, "SimpleChild", false,
-                        default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericSimpleChild"), complexType.SimpleChild.CSFullName)) },
+                        default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericSimpleChild"), complexType.SimpleChild.CSFullName)) },
                         default(SyntaxTokenList), new[] { CS.AssignStm(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType")), "SimpleChild"), CS.IdName("value")) }));
                     //new public CLASS EnsureSimpleChild(bool @try = false) { return EnsureType(@try).EnsureSimpleChild(); }
                     AddCSMember(CS.Method(CS.NewPublicTokenList, complexType.SimpleChild.CSFullName, "EnsureSimpleChild", new[] { CS.Parameter(CS.BoolType, "@try", CS.FalseLiteral) },
-                       SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType"), CS.IdName("@try")), "EnsureSimpleChild")))));
+                       CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CS.InvoExpr(CS.IdName("EnsureType"), CS.IdName("@try")), "EnsureSimpleChild")))));
                     //new public VALUE Value {
                     //    get { var obj = SimpleChild; if(obj == null) return null; return obj.Value; }
                     //    set { EnsureSimpleChild().Value = value; }
@@ -1311,7 +1386,7 @@ namespace Metah.Compilation.X {
                     AddCSMember(CS.Field(CS.PublicStaticReadOnlyTokenList, CS.XNameName, icNameName, CS.Literal(ic.Name)));
                     //public IdentityConstraint Name_Constraint{get{ return base.TryGetIdentityConstraint(Name_ConstraintName); }}
                     AddCSMember(CS.Property(CS.PublicTokenList, CSEX.IdentityConstraintName, icName + "_Constraint", true,
-                        default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr("TryGetIdentityConstraint"), CS.IdName(icNameName))) }
+                        default(SyntaxTokenList), new[] { CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr("TryGetIdentityConstraint"), CS.IdName(icNameName))) }
                         ));
                 }
             }
@@ -1319,13 +1394,13 @@ namespace Metah.Compilation.X {
                 //public static bool TryLoadAndValidate<T>(XmlReader reader, Context context, out CLASS result) { return TryLoadAndSpecialize(reader, context, ThisInfo, out result); }
                 AddCSMember(CS.Method(CS.PublicStaticTokenList, CS.BoolType, "TryLoadAndValidate",
                     new[] { CS.Parameter(CS.XmlReaderName, "reader"), CS.Parameter(CSEX.ContextName, "context"), CS.OutParameter(CSFullName, "result") },
-                    SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.IdName("TryLoadAndSpecialize"),
+                    CS.ReturnStm(CS.InvoExpr(CS.IdName("TryLoadAndSpecialize"),
                         SyntaxFactory.Argument(CS.IdName("reader")), SyntaxFactory.Argument(CS.IdName("context")), SyntaxFactory.Argument(CS.IdName("ThisInfo")), CS.OutArgument("result")))));
             }
             //public static readonly XName ThisName = XName.Get("", "");
             AddCSMember(CS.Field(hasElementBase ? CS.NewPublicStaticReadOnlyTokenList : CS.PublicStaticReadOnlyTokenList, CS.XNameName, "ThisName", CS.Literal(Name)));
             //protected override XName GetName() { return ThisName; }
-            AddCSMember(CS.Method(CS.ProtectedOverrideTokenList, CS.XNameName, "GetName", null, SyntaxFactory.ReturnStatement(CS.IdName("ThisName"))));
+            AddCSMember(CS.Method(CS.ProtectedOverrideTokenList, CS.XNameName, "GetName", null, CS.ReturnStm(CS.IdName("ThisName"))));
             if (isRef) {
                 //public static readonly ElementInfo ThisInfo = new ElementInfo(clrType, memberName, isEffectiveOptional, referentialElement);
                 AddCSMember(CS.Field(hasBase ? CS.NewPublicStaticReadOnlyTokenList : CS.PublicStaticReadOnlyTokenList, CSEX.ElementInfoName, "ThisInfo",
@@ -1416,15 +1491,15 @@ namespace Metah.Compilation.X {
             if (hasBase) {
                 //new public IList<ITEMCLS> ItemList { get { return this; } }
                 AddCSMember(CS.Property(CS.NewPublicTokenList, CS.IListOf(Item.CSFullName), "ItemList", true,
-                    default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(SyntaxFactory.ThisExpression()) }));
+                    default(SyntaxTokenList), new[] { CS.ReturnStm(SyntaxFactory.ThisExpression()) }));
                 AddCSMembers(CSEX.IListOverrideMembers(Item.CSFullName));
             }
             //public ITEMCLS CreateItem() {return base.CreateItem<ITEMCLS>(); }
             AddCSMember(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, Item.CSFullName, "CreateItem", null,
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("CreateItem", Item.CSFullName))))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("CreateItem", Item.CSFullName))))));
             //public ITEMCLS CreateAndAddItem() {return base.CreateAndAddItem<ITEMCLS>(); }
             AddCSMember(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, Item.CSFullName, "CreateAndAddItem", null,
-                SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("CreateAndAddItem", Item.CSFullName))))));
+                CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("CreateAndAddItem", Item.CSFullName))))));
             //public static readonly ChildListInfo ThisInfo = new ChildListInfo(clrType, memberName, isEffectiveOptional, isMixed, minOccurs, maxOccurs, item);
             AddCSMember(CS.Field(hasBase ? CS.NewPublicStaticReadOnlyTokenList : CS.PublicStaticReadOnlyTokenList, CSEX.ChildListInfoName, "ThisInfo",
                 CS.NewObjExpr(CSEX.ChildListInfoName, SyntaxFactory.TypeOfExpression(CSFullName), CS.Literal(MemberName), CS.Literal(IsEffectiveOptional), CS.Literal(IsMixed),
@@ -1589,11 +1664,12 @@ namespace Metah.Compilation.X {
                 //    set { base.GenericComplexChild = value; }
                 //}
                 parent.AddCSMember(CS.Property(CS.NewPublicTokenList, CSFullName, "ComplexChild", false,
-                    default(SyntaxTokenList), new[] { SyntaxFactory.ReturnStatement(CS.AsExpr(CS.BaseMemberAccessExpr("GenericComplexChild"), CSFullName)) },
+                    default(SyntaxTokenList), new[] { CS.ReturnStm(CS.AsExpr(CS.BaseMemberAccessExpr("GenericComplexChild"), CSFullName)) },
                     default(SyntaxTokenList), new[] { CS.AssignStm(CS.BaseMemberAccessExpr("GenericComplexChild"), CS.IdName("value")) }));
                 //new public CLASS EnsureComplexChild() { return base.EnsureComplexChild<CLASS>(); }
                 parent.AddCSMember(CS.Method(hasBase ? CS.NewPublicTokenList : CS.PublicTokenList, CSFullName, "EnsureComplexChild", null,
-                   SyntaxFactory.ReturnStatement(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureComplexChild", CSFullName))))));
+                   CS.ReturnStm(CS.InvoExpr(CS.BaseMemberAccessExpr(CS.GenericName("EnsureComplexChild", CSFullName))))));
+                parent.AddCSMembers(AdditionalCSMemberList);
             }
             return parent;
         }
