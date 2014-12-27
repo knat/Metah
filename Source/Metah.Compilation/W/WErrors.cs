@@ -4,7 +4,7 @@ namespace Metah.Compilation.W {
         InvalidNamespaceName = Error.WStart + 100,
         DuplicateActivityVariableOrParameterName,
         InvalidActivityVariableOrParameterReference,
-        ReferenceToActivityVariableOrParameterNotAllowed,
+        ReferencingActivityVariableOrParameterNotAllowed,
         ActivityInvokeNotAllowed,
         ActivityInvokeCannotBeUsedInCSBlockStmOrLambdaExprEtc,
         InvalidActivityInvokeSyntax,

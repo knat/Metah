@@ -9,7 +9,7 @@ namespace Metah.Compilation.W {
                 case ErrorKind.InvalidNamespaceName: return "Invalid namespace name '{0}'";
                 case ErrorKind.DuplicateActivityVariableOrParameterName: return "Duplicate activity variable or parameter name '{0}'";
                 case ErrorKind.InvalidActivityVariableOrParameterReference: return "Invalid activity variable or parameter reference '{0}'";
-                case ErrorKind.ReferenceToActivityVariableOrParameterNotAllowed: return "Reference to activity variable or parameter not allowed";
+                case ErrorKind.ReferencingActivityVariableOrParameterNotAllowed: return "Referencing activity variable or parameter not allowed";
                 case ErrorKind.ActivityInvokeNotAllowed: return "Activity (delegate) invocation not allowed";
                 case ErrorKind.ActivityInvokeCannotBeUsedInCSBlockStmOrLambdaExprEtc: return "Activity (delegate) invocation cannot be used in C# block statement, lambda expression, anonymous method or query expression body";
                 case ErrorKind.InvalidActivityInvokeSyntax: return "Invalid activity invocation syntax. 'activityInstanceExpr.Invoke(...)' expected";

@@ -1,5 +1,6 @@
 //
-//Schema-lized Document Object Model(SDOM)
+//Metah.X.cs
+//Schemalized Document Object Model(SDOM)
 //DO NOT EDIT unless you know what you are doing
 //Visit https://github.com/knat/Metah for more information
 //

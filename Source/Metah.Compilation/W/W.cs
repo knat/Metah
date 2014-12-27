@@ -684,7 +684,7 @@ namespace Metah.Compilation.W {
                     var store = _statement.StoreHost.TryGetStore(idName.Identifier.ValueText);
                     if (store != null) {
                         if (_csExprOnly) {
-                            CompilationContext.Throw(idName.Identifier.GetSourceSpan(), ErrorKind.ReferenceToActivityVariableOrParameterNotAllowed);
+                            CompilationContext.Throw(idName.Identifier.GetSourceSpan(), ErrorKind.ReferencingActivityVariableOrParameterNotAllowed);
                         }
                         return store;
                     }

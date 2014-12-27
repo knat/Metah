@@ -167,9 +167,9 @@ As the preceding code demonstrates, composing activities in C#(/VB) is very verb
 
 1. You need Visual Studio 2013;
 2. Download and install [the latest Metah vsix package](https://github.com/knat/Metah/releases);
-3. Open VS 2013 -> New project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](../../Examples/W/HelloMW));
+3. Open VS 2013 -> New Project -> Visual C# -> Metah.W -> Create a new Metah.W Console Application(or you can open [the HelloMW project](../../Examples/W/HelloMW));
 4. Delete Program.cs;
-5. Add new item -> Visual C# Items -> Metah.W -> Create a new MW file named FirstLook.mw;
+5. Add New Item -> Visual C# Items -> Metah.W -> Create a new MW file named FirstLook.mw;
 6. Copy the following code into FirstLook.mw.
 
 ```C#
@@ -456,8 +456,6 @@ It's strongly recommended that you put some time on reading the generated code i
 
 So far, there are three methods of authoring composite activities: by the WF designer(XAML), by C#/VB and by Metah.W. I'm not a fan of the WF designer, for it is very awkward: working in the WF designer is like typing on a mini keyboard with thick gloves. If you love writing IL code, you certainly love writing composite activities in C#/VB. Metaprogramming is elegant and efficient, I think it is the best choice.
 
-During the project compilation, firstly, the MW files(.mw) and the C# files of the project are sent to the MW compiler, the MW compiler parses and analyzes the MW files and generates C# files(.mw.cs) from them, then all the C# files(generated and normal) are sent to the C# compiler to generate the final CLR assembly.
-
 MW projects extend from C# projects. Any existing C# projects can support MW by inserting the following code at the end of the .csproj file:
 
 ```xml
@@ -467,6 +465,8 @@ MW projects extend from C# projects. Any existing C# projects can support MW by 
 ```
 
 ![](EditCSProj.png)
+
+During the project compilation, firstly, MW files(.mw) and C# files of the project are sent to the MW compiler, the MW compiler parses and analyzes the MW files and generates C# files(.mw.cs) from them, then all the C# files(generated and normal) are sent to the C# compiler to generate the final CLR assembly.
 
 ##Activities##
 
@@ -1313,7 +1313,7 @@ condition-clause:
 ;
 ```
 
-A `state-machine-statement` must have at least one common node and one final node. Every node is identified by a unique label. If a state-machine declares a `goto-clause`(it must reference to a common node), the execution is transfered to that common node, otherwise the first declared common node. After the execution enters a node, the `entry-clause`(if any) is executed. The `state-machine-statement-transition` transfers the execution to another node(maybe self node). A transition without the `trigger-clause` is like it has a fictional trigger which ends immediately. All the triggers of the common node are exectuted in parallel. After one trigger ends(other triggers are NOT canceled), the `condition-clause`(s) of the trigger are evaluated in the declared order. A transition body without the `condition-clause` is like it has a fictional condition which always returns true. If the condition is evaluated to true, the `exit-clause`(if any) is executed and the corresponding `action-clause`(if any) is executed and the the execution is transfered to the node specified by the corresponding `goto-clause`(other running triggers are canceled). If the condition is evaluated to false, the next condition is evaluated. If all the conditions are evaluated to false, that trigger is exectuted again. After a final node ends, the state-machine ends. Besides SecondLook.mw, here is another example:
+A `state-machine-statement` must have at least one common node and one final node. Every node is identified by a unique label. If a state-machine declares a `goto-clause`(it must reference a common node), the execution is transfered to that common node, otherwise the first declared common node. After the execution enters a node, the `entry-clause`(if any) is executed. The `state-machine-statement-transition` transfers the execution to another node(maybe self node). A transition without the `trigger-clause` is like it has a fictional trigger which ends immediately. All the triggers of the common node are exectuted in parallel. After one trigger ends(other triggers are NOT canceled), the `condition-clause`(s) of the trigger are evaluated in the declared order. A transition body without the `condition-clause` is like it has a fictional condition which always returns true. If the condition is evaluated to true, the `exit-clause`(if any) is executed and the corresponding `action-clause`(if any) is executed and the the execution is transfered to the node specified by the corresponding `goto-clause`(other running triggers are canceled). If the condition is evaluated to false, the next condition is evaluated. If all the conditions are evaluated to false, that trigger is exectuted again. After a final node ends, the state-machine ends. Besides SecondLook.mw, here is another example:
 
 ```C#
 activity DelayEx(int Seconds) as int

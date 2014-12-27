@@ -9,14 +9,14 @@ namespace Metah.MSBuild.X {
     public sealed class MetahXBuilder : BuilderBase {
         public ITaskItem[] XCSharpFiles { get; set; }
         public ITaskItem[] XFiles { get; set; }
-        public bool EmbedSDOMSource { get; set; }
+        public bool EmbedSDOM { get; set; }
         [Output]
         public ITaskItem[] OutputCSharpFiles { get; set; }
         //
         public override bool Execute() {
             var errorStore = new XBuildErrorStore();
             try {
-                var mxFilePath = CopyFile("Metah.X.cs", false);//EmbedSDOMSource);
+                var mxFilePath = CopyFile("Metah.X.cs", false);//EmbedSDOM);
                 CopyFile("Metah.X.dll", false);
                 if ((XCSharpFiles == null || XCSharpFiles.Length == 0) && (XFiles == null || XFiles.Length == 0))
                 {
@@ -26,7 +26,7 @@ namespace Metah.MSBuild.X {
                 var xCSharpFileList = CreateCompilationInputFileList(XCSharpFiles);
                 var xFileList = CreateCompilationInputFileList(XFiles);
                 var cSharpFileList = CreateCompilationInputFileList(CSharpFiles);
-                if (EmbedSDOMSource) cSharpFileList.Add(new CompilationInputFile(mxFilePath));
+                if (EmbedSDOM) cSharpFileList.Add(new CompilationInputFile(mxFilePath));
                 var preprocessorSymbolList = CreatePreprocessorSymbolList();
                 var metadataReferenceList = CreateMetadataReferenceList();
                 var compilationInput = new XCompilationInput(preprocessorSymbolList, cSharpFileList, metadataReferenceList, xCSharpFileList, xFileList);
@@ -34,7 +34,7 @@ namespace Metah.MSBuild.X {
                 foreach (var error in compilationOutput.ErrorList) LogError(error, errorStore);
                 if (compilationOutput.HasErrors) return false;
                 var outputCSharpFileList = new List<TaskItem>();
-                if (EmbedSDOMSource) outputCSharpFileList.Add(new TaskItem(mxFilePath));
+                if (EmbedSDOM) outputCSharpFileList.Add(new TaskItem(mxFilePath));
                 if (compilationOutput.Analyzer != null) {
                     foreach (var compilationUnit in compilationOutput.Analyzer.CompilationUnits) {
                         var filePath = compilationUnit.FilePath + ".cs";
