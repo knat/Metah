@@ -321,9 +321,11 @@ namespace Metah.Compilation.X {
             CSFullName = CS.QualifiedName(parent.CSFullName, CSName);
             CSFullExp = CS.MemberAccessExpr(parent.CSFullExp, CSName);
             Object.AnalyzerAncestor.AddClassAlias((CSClass)CSPart, CSFullName);
-            //private static CSFullName AsThis(object o){return o as CSFullName;}
+            /*
+            //>private static CSFullName AsThis(object o){return o as CSFullName;}
             AddCSMember(CS.Method(CS.PrivateStaticTokenList, CSFullName, "AsThis", new[] { CS.Parameter(CS.ObjectType, "o") },
                 CS.ReturnStm(CS.AsExpr(CS.IdName("o"), CSFullName))));
+             */
             return parent;
         }
         internal void AddCSMember(MemberDeclarationSyntax member) { CSPart.MemberList.Add(member); }

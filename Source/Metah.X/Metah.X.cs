@@ -1,6 +1,5 @@
 //
-//Metah.X.cs
-//Schemalized Document Object Model(SDOM)
+//Metah.X.cs: Schemalized Document Object Model(SDOM)
 //DO NOT EDIT unless you know what you are doing
 //Visit https://github.com/knat/Metah for more information
 //
@@ -20,6 +19,63 @@ using SDateTime = System.DateTime;
 using Metah.X.Extensions;
 
 namespace Metah.X {
+    [Serializable]
+    public abstract class Object : IXmlLineInfo {
+        protected Object() { }
+        private Object _parent;
+        public Object Parent { get { return _parent; } }
+        public bool HasParent { get { return _parent != null; } }
+        private Object SetParent(Object parent) {
+            if (parent == null) throw new ArgumentNullException("parent");
+            for (var i = parent; i != null; i = i._parent)
+                if (object.ReferenceEquals(this, i)) throw new InvalidOperationException("Circular reference detected");
+            Object obj;
+            if (_parent == null) obj = this;
+            else obj = DeepClone();
+            obj._parent = parent;
+            return obj;
+        }
+        protected T SetParentTo<T>(T obj, bool allowNull = true) where T : Object {
+            if (obj == null) {
+                if (!allowNull) throw new ArgumentNullException("obj");
+                return null;
+            }
+            return (T)obj.SetParent(this);
+        }
+        public T GetAncestor<T>(bool @try = true, bool testSelf = false) where T : class {
+            for (var obj = testSelf ? this : _parent; obj != null; obj = obj._parent) {
+                var res = obj as T;
+                if (res != null) return res;
+            }
+            if (!@try) throw new InvalidOperationException("Cannot get ancestor of type: " + typeof(T).FullName);
+            return null;
+        }
+        private Location? _location;
+        public virtual Location? Location { get { return _location; } set { _location = value; } }
+        bool IXmlLineInfo.HasLineInfo() { return Location != null; }
+        int IXmlLineInfo.LineNumber { get { return Location.Line(); } }
+        int IXmlLineInfo.LinePosition { get { return Location.Column(); } }
+        //
+        public virtual Object DeepClone() {
+            var obj = (Object)MemberwiseClone();
+            obj._parent = null;
+            return obj;
+        }
+        public T DeepClone<T>() where T : Object { return (T)DeepClone(); }
+        public virtual ObjectInfo ObjectInfo { get { return null; } }
+        public bool IsSpecific { get { return ObjectInfo != null; } }
+        public bool TryValidate(Context context) {
+            if (context == null) throw new ArgumentNullException("context");
+            var success = TryValidating(context, true);
+            if (success) success = TryValidateCore(context);
+            return TryValidated(context, success);
+        }
+        protected virtual bool TryValidating(Context context, bool fromValidate) { return true; }
+        protected virtual bool TryValidateCore(Context context) { return true; }
+        protected virtual bool TryValidated(Context context, bool success) { return success; }
+        internal bool InvokeTryValidatePair(Context context) { return TryValidated(context, TryValidating(context, false)); }
+    }
+    #region Diagnostics
     public enum DiagnosticSeverity { Error = 0, Warning, Info }
     public enum DiagnosticCode {
         InvalidObjectClrType = 1,
@@ -348,75 +404,21 @@ namespace Metah.X {
             return null;
         }
     }
-    public interface IIdRefObject { }//IdRef and IdRefs impls this interface
-    public interface IEntityObject {//Attribute and Element impls this interface
+    #endregion Diagnostics
+    public interface IIdRefObject { }//IdRef and IdRefs impl this interface
+    public interface IEntityObject {//Attribute and Element impl this interface
         XName Name { get; }
         Type Type { get; }
         object Value { get; }
     }
 
     [Serializable]
-    public abstract class Object : IXmlLineInfo {
-        protected Object() { }
-        private Object _parent;
-        public Object Parent { get { return _parent; } }
-        public bool HasParent { get { return _parent != null; } }
-        private Object SetParent(Object parent) {
-            if (parent == null) throw new ArgumentNullException("parent");
-            for (var i = parent; i != null; i = i._parent)
-                if (object.ReferenceEquals(this, i)) throw new InvalidOperationException("Circular reference detected");
-            Object obj;
-            if (_parent == null) obj = this;
-            else obj = DeepClone();
-            obj._parent = parent;
-            return obj;
-        }
-        protected T SetParentTo<T>(T obj, bool allowNull = true) where T : Object {
-            if (obj == null) {
-                if (!allowNull) throw new ArgumentNullException("obj");
-                return null;
-            }
-            return (T)obj.SetParent(this);
-        }
-        public T GetAncestor<T>(bool @try = true, bool testSelf = false) where T : class {
-            for (var obj = testSelf ? this : _parent; obj != null; obj = obj._parent) {
-                var res = obj as T;
-                if (res != null) return res;
-            }
-            if (!@try) throw new InvalidOperationException("Cannot get ancestor of type: " + typeof(T).FullName);
-            return null;
-        }
-        private Location? _location;
-        public virtual Location? Location { get { return _location; } set { _location = value; } }
-        bool IXmlLineInfo.HasLineInfo() { return Location != null; }
-        int IXmlLineInfo.LineNumber { get { return Location.Line(); } }
-        int IXmlLineInfo.LinePosition { get { return Location.Column(); } }
-        //
-        public virtual Object DeepClone() {
-            var obj = (Object)MemberwiseClone();
-            obj._parent = null;
-            return obj;
-        }
-        public T DeepClone<T>() where T : Object { return (T)DeepClone(); }
-        public virtual ObjectInfo ObjectInfo { get { return null; } }
-        public bool IsSpecific { get { return ObjectInfo != null; } }
-        public bool TryValidate(Context context) {
-            if (context == null) throw new ArgumentNullException("context");
-            var success = TryValidating(context, true);
-            if (success) success = TryValidateCore(context);
-            return TryValidated(context, success);
-        }
-        protected virtual bool TryValidating(Context context, bool fromValidate) { return true; }
-        protected virtual bool TryValidateCore(Context context) { return true; }
-        protected virtual bool TryValidated(Context context, bool success) { return success; }
-        internal bool InvokeTryValidatePair(Context context) { return TryValidated(context, TryValidating(context, false)); }
-    }
-    [Serializable]
     public abstract class Type : Object {
         protected Type() { }
         public TypeInfo TypeInfo { get { return (TypeInfo)ObjectInfo; } }
         public static readonly TypeInfo ThisInfo = new TypeInfo(typeof(Type), TypeKind.Type, TypeKind.Type.ToSystemName(), null);
     }
+    #region Simple types
     [Serializable]
     public class SimpleType : Type, IEquatable<SimpleType> {
         public SimpleType() { }
@@ -2633,7 +2635,8 @@ namespace Metah.X {
         new public static readonly AtomicSimpleTypeInfo ThisInfo = new AtomicSimpleTypeInfo(typeof(Day), TypeKind.Day, TypeKind.Day.ToSystemName(),
             SimpleType.ThisInfo, typeof(SDateTime), null);
     }
-    #endregion
+    #endregion Atomic simple types
+    #endregion Simple types
     [Serializable]
     public class ComplexType : Type {
         public ComplexType() { }
@@ -2884,6 +2887,7 @@ namespace Metah.X {
             return true;
         }
     }
+    #region Attributes
     [Serializable]
     public class Attribute : Object, IEntityObject {
         protected Attribute() {
@@ -2911,7 +2915,7 @@ namespace Metah.X {
                     for (var i = value; i != null; i = i._referentialAttribute)
                         if (object.ReferenceEquals(this, i)) throw new InvalidOperationException("Circular reference detected");
                 }
-                _referentialAttribute = SetParentTo(value);
+                _referentialAttribute = value;// SetParentTo(value);
             }
         }
         public Attribute GenericReferentialAttribute {
@@ -2942,7 +2946,7 @@ namespace Metah.X {
         public override Object DeepClone() {
             var obj = (Attribute)base.DeepClone();
             obj.SetType(_type);
-            obj.ReferentialAttribute = _referentialAttribute;
+            //obj.ReferentialAttribute = _referentialAttribute;
             return obj;
         }
         public bool HasType { get { return EffectiveAttribute._type != null; } }
@@ -3245,6 +3249,8 @@ namespace Metah.X {
             return true;
         }
     }
+    #endregion Attributes
+    #region Children
     [Serializable]
     public abstract class Child : Object {
         protected Child() { }
@@ -3266,6 +3272,7 @@ namespace Metah.X {
     public abstract class ContentChild : Child {
         protected ContentChild() { }
     }
+    #region Identity constraints
     public enum IdentityConstraintKind { Key, Unique, KeyRef }
     [Serializable]
     public sealed class IdentityConstraint {
@@ -3358,7 +3365,7 @@ namespace Metah.X {
         private readonly IdentityValues _referentialIdentityValues;
         public IdentityValues ReferentialIdentityValues { get { return _referentialIdentityValues; } }
     }
-
+    #endregion Identity constraints
     [Serializable]
     public class Element : ContentChild, IEntityObject {
         public Element() { _name = GetName(); }
@@ -3373,7 +3380,7 @@ namespace Metah.X {
                     for (var i = value; i != null; i = i._referentialElement)
                         if (object.ReferenceEquals(this, i)) throw new InvalidOperationException("Circular reference detected");
                 }
-                _referentialElement = SetParentTo(value);
+                _referentialElement = value;// SetParentTo(value);
             }
         }
         public Element GenericReferentialElement {
@@ -3472,7 +3479,7 @@ namespace Metah.X {
         public override Object DeepClone() {
             var obj = (Element)base.DeepClone();
             obj.SetType(_type);
-            obj.ReferentialElement = _referentialElement;
+            //obj.ReferentialElement = _referentialElement;
             return obj;
         }
         public bool HasType { get { return EffectiveElement._type != null; } }
@@ -5018,8 +5025,8 @@ namespace Metah.X {
             return item;
         }
     }
-
-    #region metadata
+    #endregion Children
+    #region Metadata
     [Serializable]
     public abstract class ProgramInfo {
         protected ProgramInfo() { }
@@ -5267,14 +5274,14 @@ namespace Metah.X {
     }
     public enum TypeKind {
         //None = 0,
-        Type = 990,
-        SimpleType,
-        IdRefs,
-        Entities,
-        NameTokens,
+        Type = 900,
+        SimpleType = 901,
+        IdRefs = 902,
+        Entities = 903,
+        NameTokens = 904,
         ComplexType = 1000,
-        ListedSimpleType,
-        UnitedSimpleType,
+        ListedSimpleType = 1001,
+        UnitedSimpleType = 1002,
         //
         String = XmlTypeCode.String,
         NormalizedString = XmlTypeCode.NormalizedString,
@@ -5892,7 +5899,7 @@ namespace Metah.X {
         public IEnumerable<ChildInfo> NonNullMembers { get { return Members.Where(i => i != null); } }
     }
 
-    #endregion
+    #endregion Metadata
 }
 
 namespace Metah.X.Extensions {

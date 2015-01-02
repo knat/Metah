@@ -268,7 +268,7 @@ namespace Metah.Compilation.X {
         internal readonly Object Parent;
         internal readonly bool IsGenerated;
         internal readonly SimpleToken Keyword;//'##' token
-        internal readonly Identifier AliasId;
+        internal readonly Identifier AliasId;//opt
         private List<AttributeListSyntax> _attributeListList;
         internal List<AttributeListSyntax> AttributeListList { get { return _attributeListList ?? (_attributeListList = new List<AttributeListSyntax>()); } }
         private List<NameSyntax> _baseNameList;

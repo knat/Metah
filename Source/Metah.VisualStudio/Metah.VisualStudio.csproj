@@ -99,25 +99,9 @@
     <Compile Include="EditorBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WEditor.cs" />
-    <Compile Include="XEditor.cs" />
+    <None Include="XEditor.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ItemTemplates\Metah.X\X.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="ItemTemplates\Metah.X\XCSharp.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="ProjectTemplates\Metah.X\ClassLibrary.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="ProjectTemplates\Metah.X\ConsoleApplication.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <Content Include="ItemTemplates\Metah.W\W.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>

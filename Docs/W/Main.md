@@ -472,7 +472,7 @@ During the project compilation, firstly, MW files(.mw) and C# files of the proje
 
 MW extends from C#. Besides the reserved keywords of C#, MW adds the following reserved keywords: `activity`, `cancellable`, `confirm`, `compensable`, `compensate`, `contentcorr`, `delay`, `flow`, `fif`, `fswitch`, `import`, `nopersist`, `parallel`, `persist`, `pforecah`, `pick`, `receive`, `receivereply`, `send`, `sendreply`, `statemachine`, `terminate`, `transacted` and `transactedreceive`. This means if an identifier equals to one of them, you must use `@` to escape it(`@activity`, `@pick`, etc).
 
-Grammar:
+Grammars:
 
 ```
 compilation-unit:
@@ -681,7 +681,7 @@ From callers' perspectives, `Invoke` methods have no difference between MW and n
 
 ##Variables, well-known statements and C# expression statements##
 
-Grammar:
+Grammars:
 
 ```
 variable:
@@ -1136,7 +1136,7 @@ Invoker(): String: Func2, Int32: 12
 
 ##Delay, parallel and parallel-foreach statements##
 
-Grammar:
+Grammars:
 
 ```
 delay-statement:
@@ -1227,7 +1227,7 @@ End delaying 2 seconds
 
 ##Pick statements##
 
-Grammar: 
+Grammars: 
 
 ```
 pick-statement:
@@ -1270,7 +1270,7 @@ After 2 seconds
 
 ##State-machine statements##
 
-Grammar:
+Grammars:
 
 ```
 state-machine-statement:
@@ -1399,7 +1399,7 @@ Node2.delay(5).value==4: goto Node4
 
 ##Flow statements##
 
-Grammar:
+Grammars:
 
 ```
 flow-statement:
@@ -1484,7 +1484,7 @@ activity FlowTest()
 
 ##Transaction statements##
 
-Grammar:
+Grammars:
 
 ```
 transacted-statement:
@@ -1636,7 +1636,7 @@ For more information, please refer to the MSDN library ["Compensation"](http://m
 
 ##Runtime statements##
 
-Grammar:
+Grammars:
 
 ```
 persist-statement:
@@ -1676,7 +1676,7 @@ For more information, please refer to the MSDN library ["Runtime Activities in W
 
 You should be familiar with [the WF services and the API](http://msdn.microsoft.com/en-us/library/vstudio/dd456788(v=vs.110).aspx). If so, open [the HelloMW project](../../Examples/W/HelloMW) in Visual Studio and view the WFServices.mw and the generated WFServices.mw.cs, you will understand the MW service statements easily.
 
-Grammar:
+Grammars:
 
 ```
 receive-statement:

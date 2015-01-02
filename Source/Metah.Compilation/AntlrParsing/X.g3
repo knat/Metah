@@ -1539,8 +1539,8 @@ x_uri_or_full_name_literal returns[Node nd]
 //
 x_facet_set returns[Node nd]
 @init{var st = _start();}
-@after{nd = _struct(X.FacetSet.NodeLabel, st, _member("Keyword", Keyword), _member("Facets", Facets), _member("CSClass", CSClass));}
-:Keyword=cFacetsKeyword OpenBraceToken Facets=x_facets? CloseBraceToken CSClass=x_cs_class? SemicolonToken
+@after{nd = _struct(X.FacetSet.NodeLabel, st, _member("Keyword", Keyword), _member("Facets", Facets), _member("CSClass", (Node)null/*CSClass*/));}
+:Keyword=cFacetsKeyword OpenBraceToken Facets=x_facets? CloseBraceToken// CSClass=x_cs_class? SemicolonToken
 ;
 x_facets returns[Node nd]
 @init{var st = _start(); NodeList list = null;}
@@ -1648,13 +1648,13 @@ x_whitespace_normalization returns[Node nd]
 //
 x_root_attribute_set returns[Node nd]
 @init{var st = _start();}
-@after{nd = _struct(X.AttributeSet.NodeLabel, st, _member("Keyword", Keyword), _member("Members", Members), _member("Wildcard", Wildcard), _member("CSClass", CSClass));}
-:Keyword=AttributesKeyword OpenBraceToken Members=x_attribute_members Wildcard=x_attributes_wildcard? CloseBraceToken CSClass=x_cs_class? SemicolonToken
+@after{nd = _struct(X.AttributeSet.NodeLabel, st, _member("Keyword", Keyword), _member("Members", Members), _member("Wildcard", Wildcard), _member("CSClass", (Node)null/*CSClass*/));}
+:Keyword=AttributesKeyword OpenBraceToken Members=x_attribute_members Wildcard=x_attributes_wildcard? CloseBraceToken// CSClass=x_cs_class? SemicolonToken
 ;
 x_global_attribute_set returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.AttributeSet.NodeLabel, st, _member("Keyword", Keyword), _member("Name", Name), _member("Members", Members), _member("Wildcard", Wildcard));}
-:Keyword=AttributesKeyword Name=IdentifierToken OpenBraceToken Members=x_attribute_members Wildcard=x_attributes_wildcard? CloseBraceToken SemicolonToken
+:Keyword=AttributesKeyword Name=IdentifierToken OpenBraceToken Members=x_attribute_members Wildcard=x_attributes_wildcard? CloseBraceToken// SemicolonToken
 ;
 x_attribute_members returns[Node nd]
 @init{var st = _start(); NodeList list = null;}
@@ -1745,21 +1745,21 @@ x_wildcard_validation returns[Node nd]
 x_root_child_struct returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.ChildStruct.NodeLabel, st, _member("Keyword", Keyword), _member(NodeExtensions.AnnotationsLabel, (Node)null), _member("Members", Members),
-	_member("CSClass", (Node)null), _member("ListCSClass", (Node)null), _member("RootCSClass", RootCSClass));}
-:Keyword=cChildrenKeyword OpenBraceToken Members=x_child_struct_members CloseBraceToken RootCSClass=x_cs_class? SemicolonToken
+	_member("CSClass", (Node)null), _member("ListCSClass", (Node)null), _member("RootCSClass", (Node)null/*RootCSClass*/));}
+:Keyword=cChildrenKeyword OpenBraceToken Members=x_child_struct_members CloseBraceToken// RootCSClass=x_cs_class? SemicolonToken
 ;
 x_child_struct returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.ChildStruct.NodeLabel, st, _member("Keyword", Keyword), _member("Name", Name), _member(NodeExtensions.AnnotationsLabel, Annotations), _member("Members", Members),
-	_member("CSClass", CSClass), _member("ListCSClass", ListCSClass));}
+	_member("CSClass", (Node)null/*CSClass*/), _member("ListCSClass", (Node)null/*ListCSClass*/));}
 :(Keyword=SeqKeyword | Keyword=ChoiceKeyword | Keyword=UnorderedKeyword) Name=IdentifierToken? Annotations=x_child_annotations?
-	OpenBraceToken Members=x_child_struct_members CloseBraceToken CSClass=x_cs_class? (AsteriskToken ListCSClass=x_cs_class)? SemicolonToken
+	OpenBraceToken Members=x_child_struct_members CloseBraceToken// CSClass=x_cs_class? (AsteriskToken ListCSClass=x_cs_class)? SemicolonToken
 ;
 x_child_struct_reference returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.ChildStructReference.NodeLabel, st, _member("Keyword", Keyword), _member("QName", QName), _member(NodeExtensions.AnnotationsLabel, Annotations),
-	_member("CSClass", CSClass), _member("ListCSClass", ListCSClass));}
-:Keyword=cChildStructRefKeyword QName=x_qualifiable_name? Annotations=x_child_annotations? CSClass=x_cs_class?	(AsteriskToken ListCSClass=x_cs_class)? SemicolonToken
+	_member("CSClass", (Node)null/*CSClass*/), _member("ListCSClass", (Node)null/*ListCSClass*/));}
+:Keyword=cChildStructRefKeyword QName=x_qualifiable_name? Annotations=x_child_annotations? /*CSClass=x_cs_class? (AsteriskToken ListCSClass=x_cs_class)?*/ SemicolonToken
 ;
 x_child_struct_members returns[Node nd]
 @init{var st = _start(); NodeList list = null;}
@@ -1797,9 +1797,9 @@ x_occurrence returns[Node nd]
 x_element returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.Element.NodeLabel, st, _member("Keyword", Keyword), _member("Name", Name), _member(NodeExtensions.AnnotationsLabel, Annotations),
-	_member("TypeOrReference", TypeOrReference), _member("IdentityConstraints", IdentityConstraints), _member("CSClass", CSClass), _member("ListCSClass", ListCSClass));}
+	_member("TypeOrReference", TypeOrReference), _member("IdentityConstraints", IdentityConstraints), _member("CSClass", CSClass), _member("ListCSClass", (Node)null/*ListCSClass*/));}
 :Keyword=ElementKeyword Name=IdentifierToken? Annotations=x_element_annotations?
-	(AsKeyword TypeOrReference=x_type_or_reference)? IdentityConstraints=x_identity_constraints CSClass=x_cs_class? (AsteriskToken ListCSClass=x_cs_class)? SemicolonToken
+	(AsKeyword TypeOrReference=x_type_or_reference)? IdentityConstraints=x_identity_constraints CSClass=x_cs_class? /*(AsteriskToken ListCSClass=x_cs_class)?*/ SemicolonToken
 ;
 x_element_annotations returns[Node nd]
 @init{var st = _start(); NodeList list = null;}
@@ -1822,15 +1822,15 @@ x_element_annotation returns[Node nd]
 x_element_reference returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.ElementReference.NodeLabel, st, _member("Keyword", Keyword), _member("QName", QName), _member(NodeExtensions.AnnotationsLabel, Annotations),
-	_member("CSClass", CSClass), _member("ListCSClass", ListCSClass));}
-:Keyword=cElementRefKeyword QName=x_qualifiable_name? Annotations=x_child_annotations? CSClass=x_cs_class? (AsteriskToken ListCSClass=x_cs_class)? SemicolonToken
+	_member("CSClass", CSClass), _member("ListCSClass", (Node)null/*ListCSClass*/));}
+:Keyword=cElementRefKeyword QName=x_qualifiable_name? Annotations=x_child_annotations? CSClass=x_cs_class? /*(AsteriskToken ListCSClass=x_cs_class)?*/ SemicolonToken
 ;
 //
 x_element_wildcard returns[Node nd]
 @init{var st = _start();}
 @after{nd = _struct(X.ElementWildcard.NodeLabel, st, _member("Keyword", Keyword), _member("Wildcard", Wildcard), _member(NodeExtensions.AnnotationsLabel, Annotations),
-	_member("CSClass", CSClass), _member("ListCSClass", ListCSClass));}
-:Keyword=cWildcardKeyword Wildcard=x_wildcard? Annotations=x_child_annotations? CSClass=x_cs_class? (AsteriskToken ListCSClass=x_cs_class)? SemicolonToken
+	_member("CSClass", CSClass), _member("ListCSClass", (Node)null/*ListCSClass*/));}
+:Keyword=cWildcardKeyword Wildcard=x_wildcard? Annotations=x_child_annotations? CSClass=x_cs_class? /*(AsteriskToken ListCSClass=x_cs_class)?*/ SemicolonToken
 ;
 //
 x_identity_constraints returns[Node nd]
