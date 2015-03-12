@@ -452,7 +452,7 @@ namespace HelloMW.SecondLook
 
 It's strongly recommended that you put some time on reading the generated code in Visual Studio.
 
-So far, there are three methods of authoring composite activities: by the WF designer(XAML), by C#/VB and by Metah.W. I'm not a fan of the WF designer, for it is very awkward: working in the WF designer is like typing on a mini keyboard with thick gloves. If you love writing IL code, you certainly love writing composite activities in C#/VB. Metaprogramming is elegant and efficient, I think it is the best choice.
+So far, there are three ways of authoring composite activities: by the WF designer(XAML), by C#/VB and by Metah.W. I'm not a fan of the WF designer, for it is very awkward: working in the WF designer is like typing on a mini keyboard with thick gloves. If you love writing IL code, you will certainly love writing composite activities in C#/VB. Metaprogramming is elegant and efficient, I think it is the best choice.
 
 MW projects extend from C# projects. Any existing C# projects can support MW by inserting the following code at the end of the .csproj file:
 
