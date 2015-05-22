@@ -3,7 +3,7 @@
 
 Metah.W(MW) is a C#-derived metaprogramming language for Windows Workflow Foundation 4.5. It provides an alternative way of composing activities to the WF designer.
 
-Why Metah.W? If we think WF runtime as an "advanced" CLR, then Metah.W is an "advanced" C#. It's recommend to read the chapter 1 of [Essential Windows Workflow Foundation](http://www.amazon.com/Essential-Windows-Workflow-Foundation-Dharma/dp/0321399838/).
+Why Metah.W? If we think WF runtime as an advanced CLR, then Metah.W is an advanced C#.
 
 This article assumes you are familiar with the WF 4.5 programming.
 
