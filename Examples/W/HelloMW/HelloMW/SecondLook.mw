@@ -2,26 +2,20 @@
 using System;
 using System.Activities;
 
-namespace HelloMW.SecondLook
-{
-    class Program
-    {
-        static void Main2()
-        {
+namespace HelloMW.SecondLook {
+    class Program {
+        static void Main2() {
             WorkflowInvoker.Invoke(new Drive());
         }
     }
 
     public enum DriveAction { Neutral = 1, Forward, Reverse, TurnOff }
 
-    activity Drive()
-    {
+    activity Drive() {
         bool isMoved;
         isMoved = false;
-        while (!isMoved)
-        {
-            statemachine goto InPark
-            {
+        while (!isMoved) {
+            statemachine goto InPark {
                 DriveAction action;
             InPark:
                 ~> Console.WriteLine("Enter InPark");
@@ -54,14 +48,13 @@ namespace HelloMW.SecondLook
         }
     }
 
-    activity GetDriveAction() as DriveAction
-    {
+    activity GetDriveAction() as DriveAction {
         delay TimeSpan.FromSeconds(1);
-        Result = (DriveAction)_random.Next((int)DriveAction.Neutral, (int)DriveAction.TurnOff + 1);
+        Result = (DriveAction)_random.Next((int)DriveAction.Neutral,
+            (int)DriveAction.TurnOff + 1);
         Console.WriteLine("!action: " + Result.ToString());
     }
-    ##
-    {
+    ## {
         private static readonly Random _random = new Random((int)DateTime.Now.Ticks);
     }
 }
