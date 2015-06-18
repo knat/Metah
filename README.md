@@ -1,4 +1,4 @@
-(Click the above README.md link to view this article in full width)
+(Click [here](https://github.com/knat/Metah/blob/master/README.md) to view this article in full width.)
 # Metah.W: A Workflow Metaprogramming Language#
 
 Metah.W(MW) is a C#-derived metaprogramming language for Windows Workflow Foundation 4.5. It provides an alternative way of composing activities to the WF designer.
