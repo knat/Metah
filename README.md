@@ -1,6 +1,4 @@
-(Click [here](https://github.com/knat/Metah/blob/master/README.md) to view this article in full width.)
-
-# Metah.W: A Workflow Metaprogramming Language#
+# Metah.W: A Workflow Metaprogramming Language
 
 Metah.W(MW) is a C#-derived metaprogramming language for Windows Workflow Foundation(WF) 4.5. It provides an alternative way of composing activities to the WF designer.
 
@@ -18,7 +16,7 @@ System.ServiceModel.Activities -> SSA
 
 All the code listings in this article are contained in the [HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW).
 
-## Introduction ##
+## Introduction
 
 The following figure, which is taken from the MSDN library ["Getting Started Tutorial"](http://msdn.microsoft.com/en-us/library/vstudio/gg983473(v=vs.110).aspx), represents a number guessing activity composed in the WF designer:
 
@@ -470,7 +468,7 @@ MW projects extend from C# projects. Any existing C# projects can support MW by 
 
 During the project compilation, firstly, MW files(.mw) and C# files of the project are sent to the MW compiler, the MW compiler parses and analyzes the MW files and generates C# files(.mw.cs) from them, then all the C# files(generated and normal) are sent to the C# compiler to generate the final CLR assembly.
 
-##Activities##
+## Activities
 
 MW extends from C#. Besides the reserved keywords of C#, MW adds the following reserved keywords: `activity`, `cancellable`, `confirm`, `compensable`, `compensate`, `contentcorr`, `delay`, `flow`, `fif`, `fswitch`, `import`, `nopersist`, `parallel`, `persist`, `pforecah`, `pick`, `receive`, `receivereply`, `send`, `sendreply`, `statemachine`, `terminate`, `transacted` and `transactedreceive`. This means if an identifier equals to one of them, you must use `@` to escape it(`@activity`, `@pick`, etc).
 
@@ -681,7 +679,7 @@ import;
 
 From callers' perspectives, `Invoke` methods have no difference between MW and non-MW activities.
 
-##Variables, well-known statements and C# expression statements##
+## Variables, well-known statements and C# expression statements
 
 Grammars:
 
@@ -993,7 +991,7 @@ activity Fibonacci(int Value) as int
 
 Invoking an activity means containing it, an activity cannot contain itself directly or indirectly.
 
-##Activity delegates and invocations##
+## Activity delegates and invocations
 
 The MW compiler adds a conceptual(or fictional) `Invoke` method to every activity delegate. From MW metaprogramming's perspectives, the activity delegates are:
 
@@ -1136,7 +1134,7 @@ Invoker(): String: Func2, Int32: 12
 }
 ```
 
-##Delay, parallel and parallel-foreach statements##
+## Delay, parallel and parallel-foreach statements
 
 Grammars:
 
@@ -1227,7 +1225,7 @@ End delaying 2 seconds
 }
 ```
 
-##Pick statements##
+## Pick statements
 
 Grammars: 
 
@@ -1270,7 +1268,7 @@ After 2 seconds
 }
 ```
 
-##State-machine statements##
+## State-machine statements
 
 Grammars:
 
@@ -1399,7 +1397,7 @@ Node2.delay(5).value==4: goto Node4
 }
 ```
 
-##Flow statements##
+## Flow statements
 
 Grammars:
 
@@ -1484,7 +1482,7 @@ activity FlowTest()
 }
 ```
 
-##Transaction statements##
+## Transaction statements
 
 Grammars:
 
@@ -1636,7 +1634,7 @@ activity Compensable2Test()
 
 For more information, please refer to the MSDN library ["Compensation"](http://msdn.microsoft.com/en-us/library/vstudio/dd489432(v=vs.110).aspx).
 
-##Runtime statements##
+## Runtime statements
 
 Grammars:
 
@@ -1674,7 +1672,7 @@ activity RuntimeStatements()
 
 For more information, please refer to the MSDN library ["Runtime Activities in WF"](http://msdn.microsoft.com/en-us/library/vstudio/ee358752(v=vs.110).aspx).
 
-##Service statements##
+## Service statements
 
 You should be familiar with the [WF services and the API](http://msdn.microsoft.com/en-us/library/vstudio/dd456788(v=vs.110).aspx). If so, open the [HelloMW project](https://github.com/knat/Metah/tree/master/Examples/W/HelloMW) in Visual Studio and view the WFServices.mw and the generated WFServices.mw.cs, you will understand the MW service statements easily.
 
